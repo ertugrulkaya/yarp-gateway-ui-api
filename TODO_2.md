@@ -694,7 +694,7 @@
   - Kartlara tıklanınca ilgili sayfaya navigate et (Errors → Logs + filtre uygula)
 - **Kabul Kriteri:** Dashboard açılışında 4 KPI kartı görünmeli; hata varsa görsel uyarı
 - **Tahmini süre:** Backend 2 saat + Angular 3 saat = 5 saat
-- [ ] Tamamlandı
+- [x] Tamamlandı
 
 ---
 
