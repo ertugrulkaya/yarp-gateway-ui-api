@@ -30,7 +30,7 @@
         Saving overwrites all routes and clusters instantly.
       </p>
       <mat-form-field appearance="outline" class="full-width">
-        <textarea matInput rows="28" [(ngModel)]="rawJson" class="mono"></textarea>
+        <textarea matInput rows="28" [(ngModel)]="rawJson" (ngModelChange)="isDirty.set(true)" class="mono"></textarea>
       </mat-form-field>
     </mat-card-content>
   </mat-card>

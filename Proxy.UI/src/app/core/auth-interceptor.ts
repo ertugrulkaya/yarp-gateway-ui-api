@@ -17,7 +17,11 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         localStorage.removeItem('access_token');
         localStorage.removeItem('must_change_password');
         router.navigate(['/login']);
-        return EMPTY; // swallow — prevents component error handlers from also firing
+        return EMPTY;
+      }
+      if (err.status === 403 && err.error?.code === 'PASSWORD_CHANGE_REQUIRED') {
+        router.navigate(['/change-password']);
+        return EMPTY;
       }
       return throwError(() => err);
     })

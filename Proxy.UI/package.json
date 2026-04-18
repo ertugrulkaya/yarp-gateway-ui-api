@@ -20,6 +20,8 @@
     "@angular/material": "^21.2.6",
     "@angular/platform-browser": "^21.2.0",
     "@angular/router": "^21.2.0",
+    "diff": "^9.0.0",
+    "diff2html": "^3.4.56",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },

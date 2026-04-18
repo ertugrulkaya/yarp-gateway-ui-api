@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Proxy.Host.Services;
 
-public class LiteDbService
+public class LiteDbService : IHostedService
 {
     private readonly LiteDatabase _db;
 
@@ -13,12 +13,19 @@ public class LiteDbService
     {
         var dbPath = configuration["LiteDb:Path"] ?? "proxy.db";
         _db = new LiteDatabase($"Filename={dbPath};Connection=shared");
-
-        EnsureDefaultAdminExists();
-        EnsureDefaultConfigExists();
     }
 
     public LiteDatabase Database => _db;
+
+    // IHostedService — seed runs after DI is fully built, not during constructor
+    public Task StartAsync(CancellationToken cancellationToken)
+    {
+        EnsureDefaultAdminExists();
+        EnsureDefaultConfigExists();
+        return Task.CompletedTask;
+    }
+
+    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
     // ── Auth ──────────────────────────────────────────────────────────────────
 
@@ -58,6 +65,9 @@ public class LiteDbService
 
         // Indexes (idempotent — safe to call on every startup)
         routes.EnsureIndex(x => x.Config.ClusterId);
+
+        var history = _db.GetCollection<ConfigHistory>("config_history");
+        history.EnsureIndex(x => x.ChangedAt);
 
         if (clusters.Count() > 0 || routes.Count() > 0)
             return; // already seeded

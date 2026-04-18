@@ -33,6 +33,7 @@ if (builder.Environment.IsDevelopment())
 
 // Configure LiteDB
 builder.Services.AddSingleton<LiteDbService>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<LiteDbService>()); // same instance
 builder.Services.AddSingleton<LogService>();
 builder.Services.AddHostedService<LogWriterService>();
 
@@ -137,7 +138,8 @@ app.Use(async (context, next) =>
         && !context.Request.Path.StartsWithSegments("/api/auth/change-password"))
     {
         context.Response.StatusCode = 403;
-        await context.Response.WriteAsJsonAsync(new { message = "Password change required before using the API." });
+        await context.Response.WriteAsJsonAsync(
+            new ApiError("PASSWORD_CHANGE_REQUIRED", "You must change your password before using the API."));
         return;
     }
     await next();

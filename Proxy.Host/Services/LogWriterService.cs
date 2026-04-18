@@ -17,8 +17,16 @@ public class LogWriterService : BackgroundService
 
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
-        // Signal the channel as complete so ReadAllAsync exits cleanly
+        // Stop accepting new entries, then drain whatever is still in the channel
         _logService.CompleteChannel();
+
+        // Wait for ExecuteAsync to finish draining (max 5 seconds)
+        using var drainCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(
+            cancellationToken, drainCts.Token);
+        try { await _logService.Reader.Completion.WaitAsync(linked.Token); }
+        catch (OperationCanceledException) { /* timeout — accept partial drain */ }
+
         await base.StopAsync(cancellationToken);
     }
 }

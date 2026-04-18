@@ -1,5 +1,5 @@
 // Proxy.UI/src/app/pages/raw-editor/raw-editor.ts
-import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -29,6 +29,7 @@ export class RawEditorComponent implements OnInit {
   rawJson = '';
   importJson = '';
   showImport = false;
+  readonly isDirty = signal(false);
 
   ngOnInit() {
     this.proxyService.getRawConfig().subscribe({
@@ -46,7 +47,10 @@ export class RawEditorComponent implements OnInit {
         throw new Error('Config must contain "routes" and "clusters" arrays.');
       }
       this.proxyService.updateRawConfig(parsed).subscribe({
-        next: () => this.snackBar.open('Configuration saved & applied to YARP!', 'Close', { duration: 4000 }),
+        next: () => {
+          this.isDirty.set(false);
+          this.snackBar.open('Configuration saved & applied to YARP!', 'Close', { duration: 4000 });
+        },
         error: () => this.snackBar.open('Error saving configuration.', 'Close', { duration: 4000 }),
       });
     } catch (e: any) {
@@ -81,6 +85,7 @@ export class RawEditorComponent implements OnInit {
           throw new Error('File must contain "routes" and "clusters" arrays.');
         this.proxyService.restore(payload).subscribe({
           next: (res: any) => {
+            this.isDirty.set(false);
             this.snackBar.open(res?.message ?? 'Restore successful.', 'Close', { duration: 4000 });
             this.ngOnInit();
           },
@@ -119,6 +124,7 @@ export class RawEditorComponent implements OnInit {
       current.clusters.push(...addedClusters);
 
       this.rawJson = JSON.stringify(current, null, 2);
+      this.isDirty.set(true);
       this.showImport = false;
       this.importJson = '';
       this.cdr.markForCheck();
