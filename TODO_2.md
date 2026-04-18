@@ -467,7 +467,7 @@
   - Mat-card'lara `padding: 0 24px 24px` spacing ver
 - **Kabul Kriteri:** 1440px monitörde tablo ekranın tamamını kullanmalı
 - **Tahmini süre:** 30 dakika
-- [ ] Tamamlandı
+- [x] Tamamlandı
 
 ---
 
@@ -493,7 +493,7 @@
   - `mat-list-item` içinde `routerLinkActive` için `mat-list-item.active` selector da dene (Material quirk)
 - **Kabul Kriteri:** Aktif sayfada sidenav item'ı görsel olarak vurgulanmalı
 - **Tahmini süre:** 15 dakika
-- [ ] Tamamlandı
+- [x] Tamamlandı
 
 ---
 
@@ -517,7 +517,7 @@
   - `AuthService`'e `username` signal'i ekle (JWT'den parse et)
 - **Kabul Kriteri:** Her nav item ikonu sayfanın amacını doğru yansıtmalı
 - **Tahmini süre:** 30 dakika
-- [ ] Tamamlandı
+- [x] Tamamlandı
 
 ---
 
@@ -539,7 +539,7 @@
   - Raw edit button: mat-icon-button'a `color="accent"` ekle (hardcoded renk yerine)
 - **Kabul Kriteri:** `dashboard.html`'de sıfır inline `style=""` attribute
 - **Tahmini süre:** 1 saat
-- [ ] Tamamlandı
+- [x] Tamamlandı
 
 ---
 
@@ -580,7 +580,7 @@
   - CSS: `.empty-state { text-align: center; padding: 48px 24px; }`, büyük icon (64px), muted text rengi
 - **Kabul Kriteri:** Boş tabloda kullanıcıya ne yapacağı net gösterilmeli, tek tıkla ekleme diyaloğu açılmalı
 - **Tahmini süre:** 2 saat
-- [ ] Tamamlandı
+- [x] Tamamlandı
 
 ---
 
@@ -599,7 +599,7 @@
   - `logs.html`'de `[ngClass]="log.method"` zaten var, sadece CSS eklemek yeterli
 - **Kabul Kriteri:** Tüm HTTP method'ları renk kodlu badge göstermeli
 - **Tahmini süre:** 15 dakika
-- [ ] Tamamlandı
+- [x] Tamamlandı
 
 ---
 
@@ -623,7 +623,7 @@
   - `mat-paginator` için `aria-label` zaten var (logs.html'de mevcut)
 - **Kabul Kriteri:** axe-core tarayıcı eklentisi ile 0 "missing accessible name" hatası
 - **Tahmini süre:** 1 saat
-- [ ] Tamamlandı
+- [x] Tamamlandı
 
 ---
 
@@ -653,7 +653,7 @@
   - `isLoading = signal(false)` → her sayfada signal-based loading state
 - **Kabul Kriteri:** Her sayfada loading süresince anlamlı skeleton görünmeli, "Loading..." text olmamalı
 - **Tahmini süre:** 3 saat
-- [ ] Tamamlandı
+- [x] Tamamlandı
 
 ---
 
