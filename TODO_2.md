@@ -329,7 +329,7 @@
   - `Program.cs` → `AddScoped<IRouteRepository, LiteDbRouteRepository>()`
   - xUnit + Moq ile temel CRUD test'leri
 - **Tahmini süre:** 1 gün (implementasyon) + 1 gün (testler)
-- [ ] Tamamlandı
+- [x] Tamamlandı
 
 ---
 
