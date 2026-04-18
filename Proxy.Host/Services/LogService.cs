@@ -46,7 +46,8 @@ public class LogService : IDisposable
     public IEnumerable<LogEntry> GetLogs(
         int limit = 100, int offset = 0,
         string? clusterId = null, int? statusCode = null,
-        string? clientIp = null, string? method = null)
+        string? clientIp = null, string? method = null,
+        string? sortBy = null, string? sortDir = null)
     {
         var collection = _db.GetCollection<LogEntry>(CollectionName);
         var query = collection.Query();
@@ -58,11 +59,24 @@ public class LogService : IDisposable
             query = query.Where(x => x.ClientIp == clientIp);
         if (!string.IsNullOrWhiteSpace(method))
             query = query.Where(x => x.Method == method.ToUpperInvariant());
-        return query
-            .OrderByDescending(x => x.Timestamp)
-            .Offset(offset)
-            .Limit(limit)
-            .ToEnumerable();
+
+        bool asc = string.Equals(sortDir, "asc", StringComparison.OrdinalIgnoreCase);
+        return sortBy?.ToLowerInvariant() switch
+        {
+            "statuscode" => (asc
+                ? query.OrderBy(x => x.StatusCode)
+                : query.OrderByDescending(x => x.StatusCode))
+                .Offset(offset).Limit(limit).ToEnumerable(),
+            "durationms" => (asc
+                ? query.OrderBy(x => x.DurationMs)
+                : query.OrderByDescending(x => x.DurationMs))
+                .Offset(offset).Limit(limit).ToEnumerable(),
+            "method" => (asc
+                ? query.OrderBy(x => x.Method)
+                : query.OrderByDescending(x => x.Method))
+                .Offset(offset).Limit(limit).ToEnumerable(),
+            _ => query.OrderByDescending(x => x.Timestamp).Offset(offset).Limit(limit).ToEnumerable(),
+        };
     }
 
     public long GetTotalCount(

@@ -91,15 +91,15 @@
         </div>
       }
       <div class="table-container" [class.hidden]="isLoading()">
-        <table mat-table [dataSource]="dataSource" aria-label="Traffic logs">
+        <table mat-table [dataSource]="dataSource" matSort (matSortChange)="onSortChange($event)" aria-label="Traffic logs">
 
           <ng-container matColumnDef="timestamp">
-            <th mat-header-cell *matHeaderCellDef> Time </th>
+            <th mat-header-cell *matHeaderCellDef mat-sort-header="timestamp"> Time </th>
             <td mat-cell *matCellDef="let log"> {{ log.timestamp | date:'short' }} </td>
           </ng-container>
 
           <ng-container matColumnDef="method">
-            <th mat-header-cell *matHeaderCellDef> Method </th>
+            <th mat-header-cell *matHeaderCellDef mat-sort-header="method"> Method </th>
             <td mat-cell *matCellDef="let log">
               <span class="badge" [ngClass]="log.method"> {{ log.method }} </span>
             </td>
@@ -121,7 +121,7 @@
           </ng-container>
 
           <ng-container matColumnDef="statusCode">
-            <th mat-header-cell *matHeaderCellDef> Status </th>
+            <th mat-header-cell *matHeaderCellDef mat-sort-header="statusCode"> Status </th>
             <td mat-cell *matCellDef="let log">
               <span class="status-code" [ngClass]="'status-' + log.statusCode.toString().charAt(0)">
                 {{ log.statusCode }}
@@ -130,7 +130,7 @@
           </ng-container>
 
           <ng-container matColumnDef="duration">
-            <th mat-header-cell *matHeaderCellDef> Duration </th>
+            <th mat-header-cell *matHeaderCellDef mat-sort-header="durationMs"> Duration </th>
             <td mat-cell *matCellDef="let log"> {{ log.durationMs | number:'1.0-2' }}ms </td>
           </ng-container>
 

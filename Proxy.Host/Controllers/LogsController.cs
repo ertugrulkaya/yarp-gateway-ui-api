@@ -23,11 +23,13 @@ public class LogsController : ControllerBase
         [FromQuery] string? clusterId = null,
         [FromQuery] int? statusCode = null,
         [FromQuery] string? clientIp = null,
-        [FromQuery] string? method = null)
+        [FromQuery] string? method = null,
+        [FromQuery] string? sortBy = null,
+        [FromQuery] string? sortDir = null)
     {
         try
         {
-            var logs = _logService.GetLogs(limit, offset, clusterId, statusCode, clientIp, method).ToList();
+            var logs = _logService.GetLogs(limit, offset, clusterId, statusCode, clientIp, method, sortBy, sortDir).ToList();
             var total = _logService.GetTotalCount(clusterId, statusCode, clientIp, method);
 
             return Ok(new { Data = logs, Total = total });

@@ -24,6 +24,8 @@ export interface LogFilters {
   statusCode?: number;
   clientIp?: string;
   method?: string;
+  sortBy?: string;
+  sortDir?: string;
 }
 
 @Injectable({
@@ -43,6 +45,8 @@ export class LogsService {
     if (filters.statusCode) params['statusCode'] = String(filters.statusCode);
     if (filters.clientIp)   params['clientIp']   = filters.clientIp;
     if (filters.method)     params['method']     = filters.method;
+    if (filters.sortBy)     params['sortBy']     = filters.sortBy;
+    if (filters.sortDir)    params['sortDir']    = filters.sortDir;
     return this.http.get<LogResponse>(this.apiUrl, { params });
   }
 

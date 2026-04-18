@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatPaginatorModule, MatPaginator, PageEvent } from '@angular/material/paginator';
+import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -24,6 +25,7 @@ const HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'
     FormsModule,
     MatTableModule,
     MatPaginatorModule,
+    MatSortModule,
     MatCardModule,
     MatButtonModule,
     MatIconModule,
@@ -58,6 +60,10 @@ export class LogsComponent implements OnInit {
   filterClientIp = '';
   filterMethod = '';
 
+  // Sort state
+  readonly sortBy = signal('');
+  readonly sortDir = signal('');
+
   @ViewChild(MatPaginator) paginator!: MatPaginator;
 
   displayedColumns: string[] = [
@@ -74,6 +80,13 @@ export class LogsComponent implements OnInit {
     this.loadLogs();
   }
 
+  onSortChange(sort: Sort) {
+    this.sortBy.set(sort.active && sort.direction ? sort.active : '');
+    this.sortDir.set(sort.direction ?? '');
+    this.pageIndex = 0;
+    this.loadLogs();
+  }
+
   loadLogs() {
     const offset = this.pageIndex * this.pageSize;
     const filters: LogFilters = {};
@@ -81,6 +94,8 @@ export class LogsComponent implements OnInit {
     if (this.filterStatusCode) filters.statusCode = this.filterStatusCode;
     if (this.filterClientIp)   filters.clientIp   = this.filterClientIp;
     if (this.filterMethod)     filters.method     = this.filterMethod;
+    if (this.sortBy())         filters.sortBy     = this.sortBy();
+    if (this.sortDir())        filters.sortDir    = this.sortDir();
 
     this.isLoading.set(true);
     this.logsService.getLogs(this.pageSize, offset, filters).subscribe({

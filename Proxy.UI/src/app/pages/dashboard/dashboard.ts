@@ -5,6 +5,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatTableModule } from '@angular/material/table';
+import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -27,6 +28,7 @@ import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dial
   imports: [
     CommonModule,
     MatTableModule,
+    MatSortModule,
     MatCardModule,
     MatButtonModule,
     MatIconModule,
@@ -56,6 +58,33 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   // Derived: cluster ID list for route dialog dropdown
   readonly clusterRefs = computed(() => this.clusters().map(c => ({ clusterId: c.clusterId })));
+
+  // Sort state
+  readonly routeSort = signal<Sort>({ active: '', direction: '' });
+  readonly clusterSort = signal<Sort>({ active: '', direction: '' });
+
+  readonly sortedRoutes = computed(() => {
+    const s = this.routeSort();
+    const data = [...this.routes()];
+    if (!s.active || !s.direction) return data;
+    const dir = s.direction === 'asc' ? 1 : -1;
+    return data.sort((a, b) => {
+      switch (s.active) {
+        case 'RouteId':   return dir * (a.routeId ?? '').localeCompare(b.routeId ?? '');
+        case 'ClusterId': return dir * (a.clusterId ?? '').localeCompare(b.clusterId ?? '');
+        case 'Match':     return dir * (a.match?.path ?? '').localeCompare(b.match?.path ?? '');
+        default: return 0;
+      }
+    });
+  });
+
+  readonly sortedClusters = computed(() => {
+    const s = this.clusterSort();
+    const data = [...this.clusters()];
+    if (!s.active || !s.direction) return data;
+    const dir = s.direction === 'asc' ? 1 : -1;
+    return data.sort((a, b) => dir * (a.clusterId ?? '').localeCompare(b.clusterId ?? ''));
+  });
 
   readonly routesColumns = ['RouteId', 'ClusterId', 'Match', 'Actions'];
   readonly clustersColumns = ['ClusterId', 'Destinations', 'Actions'];
