@@ -698,7 +698,7 @@
 
 ---
 
-### T5-10 · Dark Mode Desteği — Material Theme Toggle + localStorage Persistence
+### ~~T5-10~~ · Dark Mode — İPTAL EDİLDİ (kapsam dışı)
 - **Öncelik:** 🟢 Backlog
 - **Uzman:** 🎨 🟢
 - **Sorun:** `material-theme.scss`'te `color-scheme: light` hardcoded. İşletim sistemi dark mode'dayken uygulama tamamen beyaz görünüyor — göz yorgunluğu, ops ekiplerinde gece çalışan mühendisler için ciddi sorun. Ayrıca tüm custom CSS'lerde hardcoded renkler var (`#666`, `#fafafa`, `#e0e0e0`) — bunlar dark mode'da görünmez olur.

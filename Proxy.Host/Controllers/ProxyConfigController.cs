@@ -18,13 +18,15 @@ public class ProxyConfigController : ControllerBase
     private readonly LiteDbProxyConfigProvider _provider;
     private readonly IConfigValidator _validator;
     private readonly LogService _logService;
+    private readonly HistoryService _historyService;
 
-    public ProxyConfigController(LiteDbService db, LiteDbProxyConfigProvider provider, IConfigValidator validator, LogService logService)
+    public ProxyConfigController(LiteDbService db, LiteDbProxyConfigProvider provider, IConfigValidator validator, LogService logService, HistoryService historyService)
     {
         _db = db;
         _provider = provider;
         _validator = validator;
         _logService = logService;
+        _historyService = historyService;
     }
 
     private async Task<IActionResult?> ValidateRouteAsync(RouteDto dto)
@@ -68,8 +70,7 @@ public class ProxyConfigController : ControllerBase
 
     private void RecordHistory(string entityType, string entityId, string action, object? oldValue, object? newValue)
     {
-        var history = _db.Database.GetCollection<ConfigHistory>("config_history");
-        history.Insert(new ConfigHistory
+        _historyService.Enqueue(new ConfigHistory
         {
             EntityType = entityType,
             EntityId = entityId,

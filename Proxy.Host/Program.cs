@@ -36,6 +36,8 @@ builder.Services.AddSingleton<LiteDbService>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<LiteDbService>()); // same instance
 builder.Services.AddSingleton<LogService>();
 builder.Services.AddHostedService<LogWriterService>();
+builder.Services.AddSingleton<HistoryService>();
+builder.Services.AddHostedService<HistoryWriterService>();
 
 // Health checks
 builder.Services.AddHealthChecks()
