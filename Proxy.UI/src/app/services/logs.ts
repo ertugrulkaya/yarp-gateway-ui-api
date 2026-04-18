@@ -19,6 +19,13 @@ export interface LogResponse {
   total: number;
 }
 
+export interface LogFilters {
+  clusterId?: string;
+  statusCode?: number;
+  clientIp?: string;
+  method?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -26,8 +33,17 @@ export class LogsService {
   private http = inject(HttpClient);
   private apiUrl = '/api/logs';
 
-  getLogs(limit: number = 100, offset: number = 0): Observable<LogResponse> {
-    return this.http.get<LogResponse>(`${this.apiUrl}?limit=${limit}&offset=${offset}`);
+  getLogs(
+    limit: number = 100,
+    offset: number = 0,
+    filters: LogFilters = {}
+  ): Observable<LogResponse> {
+    const params: Record<string, string> = { limit: String(limit), offset: String(offset) };
+    if (filters.clusterId)  params['clusterId']  = filters.clusterId;
+    if (filters.statusCode) params['statusCode'] = String(filters.statusCode);
+    if (filters.clientIp)   params['clientIp']   = filters.clientIp;
+    if (filters.method)     params['method']     = filters.method;
+    return this.http.get<LogResponse>(this.apiUrl, { params });
   }
 
   clearLogs(): Observable<any> {

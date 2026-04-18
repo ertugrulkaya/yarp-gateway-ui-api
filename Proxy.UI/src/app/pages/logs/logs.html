@@ -1,0 +1,135 @@
+<div class="logs-container">
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>Proxy Traffic Logs</mat-card-title>
+      <div class="spacer"></div>
+      <button mat-icon-button
+              (click)="filtersOpen.set(!filtersOpen())"
+              [matTooltip]="filtersOpen() ? 'Hide Filters' : 'Show Filters'"
+              [color]="hasActiveFilters ? 'primary' : ''">
+        <mat-icon>{{ hasActiveFilters ? 'filter_alt' : 'filter_list' }}</mat-icon>
+      </button>
+      <button mat-icon-button (click)="loadLogs()" matTooltip="Refresh">
+        <mat-icon>refresh</mat-icon>
+      </button>
+      <button mat-raised-button color="warn" (click)="clearLogs()">
+        <mat-icon>delete_sweep</mat-icon> Clear Logs
+      </button>
+    </mat-card-header>
+
+    @if (filtersOpen()) {
+      <div class="filter-panel">
+        <div class="filter-row">
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Cluster ID</mat-label>
+            <input matInput [(ngModel)]="filterClusterId" placeholder="e.g. cluster-api" (keyup.enter)="applyFilters()">
+            @if (filterClusterId) {
+              <button matSuffix mat-icon-button (click)="filterClusterId = ''">
+                <mat-icon>close</mat-icon>
+              </button>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Status Code</mat-label>
+            <input matInput type="number" [(ngModel)]="filterStatusCode" placeholder="e.g. 200" (keyup.enter)="applyFilters()">
+            @if (filterStatusCode) {
+              <button matSuffix mat-icon-button (click)="filterStatusCode = null">
+                <mat-icon>close</mat-icon>
+              </button>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Client IP</mat-label>
+            <input matInput [(ngModel)]="filterClientIp" placeholder="e.g. 192.168.1.1" (keyup.enter)="applyFilters()">
+            @if (filterClientIp) {
+              <button matSuffix mat-icon-button (click)="filterClientIp = ''">
+                <mat-icon>close</mat-icon>
+              </button>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="filter-field filter-field--sm">
+            <mat-label>Method</mat-label>
+            <mat-select [(ngModel)]="filterMethod">
+              <mat-option value="">All</mat-option>
+              @for (m of httpMethods; track m) {
+                <mat-option [value]="m">{{ m }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <div class="filter-actions">
+            <button mat-flat-button color="primary" (click)="applyFilters()">
+              <mat-icon>search</mat-icon> Search
+            </button>
+            @if (hasActiveFilters) {
+              <button mat-stroked-button (click)="clearFilters()">
+                <mat-icon>clear</mat-icon> Clear
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+    }
+
+    <mat-card-content>
+      <div class="table-container">
+        <table mat-table [dataSource]="dataSource">
+
+          <ng-container matColumnDef="timestamp">
+            <th mat-header-cell *matHeaderCellDef> Time </th>
+            <td mat-cell *matCellDef="let log"> {{ log.timestamp | date:'short' }} </td>
+          </ng-container>
+
+          <ng-container matColumnDef="method">
+            <th mat-header-cell *matHeaderCellDef> Method </th>
+            <td mat-cell *matCellDef="let log">
+              <span class="badge" [ngClass]="log.method"> {{ log.method }} </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="path">
+            <th mat-header-cell *matHeaderCellDef> Path </th>
+            <td mat-cell *matCellDef="let log"> {{ log.path }} </td>
+          </ng-container>
+
+          <ng-container matColumnDef="clusterId">
+            <th mat-header-cell *matHeaderCellDef> Cluster </th>
+            <td mat-cell *matCellDef="let log"> {{ log.clusterId }} </td>
+          </ng-container>
+
+          <ng-container matColumnDef="destination">
+            <th mat-header-cell *matHeaderCellDef> Destination </th>
+            <td mat-cell *matCellDef="let log"> {{ log.destinationAddress }} </td>
+          </ng-container>
+
+          <ng-container matColumnDef="statusCode">
+            <th mat-header-cell *matHeaderCellDef> Status </th>
+            <td mat-cell *matCellDef="let log">
+              <span class="status-code" [ngClass]="'status-' + log.statusCode.toString().charAt(0)">
+                {{ log.statusCode }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="duration">
+            <th mat-header-cell *matHeaderCellDef> Duration </th>
+            <td mat-cell *matCellDef="let log"> {{ log.durationMs | number:'1.0-2' }}ms </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        </table>
+      </div>
+
+      <mat-paginator [length]="totalLogs"
+                     [pageSize]="pageSize"
+                     [pageSizeOptions]="[10, 20, 50, 100]"
+                     (page)="onPageChange($event)"
+                     aria-label="Select page">
+      </mat-paginator>
+    </mat-card-content>
+  </mat-card>
+</div>

@@ -17,18 +17,20 @@ public class LogsController : ControllerBase
     }
 
     [HttpGet]
-    public IActionResult GetLogs([FromQuery] int limit = 100, [FromQuery] int offset = 0)
+    public IActionResult GetLogs(
+        [FromQuery] int limit = 100,
+        [FromQuery] int offset = 0,
+        [FromQuery] string? clusterId = null,
+        [FromQuery] int? statusCode = null,
+        [FromQuery] string? clientIp = null,
+        [FromQuery] string? method = null)
     {
         try
         {
-            var logs = _logService.GetLogs(limit, offset).ToList();
-            var total = _logService.GetTotalCount();
+            var logs = _logService.GetLogs(limit, offset, clusterId, statusCode, clientIp, method).ToList();
+            var total = _logService.GetTotalCount(clusterId, statusCode, clientIp, method);
 
-            return Ok(new
-            {
-                Data = logs,
-                Total = total
-            });
+            return Ok(new { Data = logs, Total = total });
         }
         catch (Exception ex)
         {

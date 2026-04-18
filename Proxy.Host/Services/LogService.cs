@@ -43,20 +43,43 @@ public class LogService : IDisposable
 
     internal void CompleteChannel() => _channel.Writer.TryComplete();
 
-    public IEnumerable<LogEntry> GetLogs(int limit = 100, int offset = 0)
+    public IEnumerable<LogEntry> GetLogs(
+        int limit = 100, int offset = 0,
+        string? clusterId = null, int? statusCode = null,
+        string? clientIp = null, string? method = null)
     {
         var collection = _db.GetCollection<LogEntry>(CollectionName);
-        return collection.Query()
+        var query = collection.Query();
+        if (!string.IsNullOrWhiteSpace(clusterId))
+            query = query.Where(x => x.ClusterId == clusterId);
+        if (statusCode.HasValue)
+            query = query.Where(x => x.StatusCode == statusCode.Value);
+        if (!string.IsNullOrWhiteSpace(clientIp))
+            query = query.Where(x => x.ClientIp == clientIp);
+        if (!string.IsNullOrWhiteSpace(method))
+            query = query.Where(x => x.Method == method.ToUpperInvariant());
+        return query
             .OrderByDescending(x => x.Timestamp)
             .Offset(offset)
             .Limit(limit)
             .ToEnumerable();
     }
 
-    public long GetTotalCount()
+    public long GetTotalCount(
+        string? clusterId = null, int? statusCode = null,
+        string? clientIp = null, string? method = null)
     {
         var collection = _db.GetCollection<LogEntry>(CollectionName);
-        return collection.Count();
+        var query = collection.Query();
+        if (!string.IsNullOrWhiteSpace(clusterId))
+            query = query.Where(x => x.ClusterId == clusterId);
+        if (statusCode.HasValue)
+            query = query.Where(x => x.StatusCode == statusCode.Value);
+        if (!string.IsNullOrWhiteSpace(clientIp))
+            query = query.Where(x => x.ClientIp == clientIp);
+        if (!string.IsNullOrWhiteSpace(method))
+            query = query.Where(x => x.Method == method.ToUpperInvariant());
+        return query.Count();
     }
 
     public int ClearLogs()

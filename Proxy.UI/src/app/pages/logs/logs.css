@@ -1,0 +1,75 @@
+.logs-container {
+  padding: 20px;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.table-container {
+  max-height: 70vh;
+  overflow: auto;
+  margin-top: 15px;
+}
+
+table {
+  width: 100%;
+}
+
+.badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 11px;
+}
+
+.GET { background-color: #61affe; color: white; }
+.POST { background-color: #49cc90; color: white; }
+.PUT { background-color: #fca130; color: white; }
+.DELETE { background-color: #f93e3e; color: white; }
+
+.status-code {
+  font-weight: bold;
+}
+
+.status-2 { color: #4caf50; } /* 2xx Success */
+.status-3 { color: #2196f3; } /* 3xx Redirection */
+.status-4 { color: #ff9800; } /* 4xx Client Error */
+.status-5 { color: #f44336; } /* 5xx Server Error */
+
+mat-card-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.filter-panel {
+  padding: 0 16px 8px;
+  background: #fafafa;
+  border-bottom: 1px solid #e0e0e0;
+  margin-bottom: 8px;
+}
+
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-start;
+  padding-top: 12px;
+}
+
+.filter-field {
+  flex: 1 1 180px;
+  min-width: 150px;
+}
+
+.filter-field--sm {
+  flex: 0 1 130px;
+}
+
+.filter-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding-top: 4px;
+}
