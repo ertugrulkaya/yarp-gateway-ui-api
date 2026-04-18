@@ -17,6 +17,12 @@ html, body {
   overflow: hidden;
 }
 
+/* Angular Material MDC drawer iç scroll container — host'a overflow:hidden yazmak yetmez,
+   asıl overflow:auto buraya set edilir. Global styles'tan dogrudan hedeflenebilir. */
+.mat-drawer-inner-container {
+  overflow: hidden !important;
+}
+
 .spacer {
   flex: 1 1 auto;
 }
