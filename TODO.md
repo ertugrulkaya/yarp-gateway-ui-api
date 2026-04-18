@@ -17,7 +17,7 @@
   - Production için environment variable (`JWT__KEY`) kullan
   - `Program.cs`'de hardcoded fallback string'i kaldır, key yoksa startup'ta exception fırlat
 - **Tahmini süre:** 30 dakika
-- [ ] Tamamlandı
+- [x] Tamamlandı
 
 ---
 

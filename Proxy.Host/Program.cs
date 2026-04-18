@@ -22,7 +22,11 @@ builder.Services.AddReverseProxy();
 
 // Load JWT Settings
 var jwtSettings = builder.Configuration.GetSection("Jwt");
-var secretKey = jwtSettings.GetValue<string>("Key") ?? "SuperSecretHmacKeyForProxyManager2026!++AndItNeedsToBeAtLeast64CharactersLongToWorkWithSha512";
+var secretKey = jwtSettings.GetValue<string>("Key");
+if (string.IsNullOrWhiteSpace(secretKey))
+    throw new InvalidOperationException(
+        "JWT key is not configured. Set 'Jwt:Key' via environment variable (JWT__KEY) or user-secrets. " +
+        "Minimum 64 characters required for HMAC-SHA512.");
 var issuer = jwtSettings.GetValue<string>("Issuer") ?? "AntiGravityProxyAuth";
 
 // Configure Authentication
