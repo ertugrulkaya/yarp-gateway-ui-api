@@ -10,7 +10,7 @@ html, body {
 }
 
 .sidenav {
-  width: 220px;
+  width: 180px;
   display: flex;
   flex-direction: column;
 }
