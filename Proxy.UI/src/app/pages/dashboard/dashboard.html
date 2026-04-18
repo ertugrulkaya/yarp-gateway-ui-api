@@ -1,0 +1,113 @@
+<div class="card-container">
+  <mat-card>
+    <mat-card-header>
+      <div class="card-header-actions">
+        <mat-card-title>Proxy Routes</mat-card-title>
+        <div style="display:flex; gap: 8px;">
+          <button mat-stroked-button color="primary" (click)="openServiceWizard()" matTooltip="Auto-generate all routes for a service">
+            <mat-icon>auto_awesome</mat-icon> Add Service
+          </button>
+          <button mat-raised-button color="primary" (click)="addRoute()">
+            <mat-icon>add</mat-icon> Add Route
+          </button>
+        </div>
+      </div>
+    </mat-card-header>
+    <mat-card-content>
+      <table mat-table [dataSource]="routes" class="mat-elevation-z8" style="width: 100%; margin-top: 15px;">
+        <ng-container matColumnDef="RouteId">
+          <th mat-header-cell *matHeaderCellDef>Route ID</th>
+          <td mat-cell *matCellDef="let element">{{element.routeId}}</td>
+        </ng-container>
+        <ng-container matColumnDef="ClusterId">
+          <th mat-header-cell *matHeaderCellDef>Target Cluster</th>
+          <td mat-cell *matCellDef="let element">{{element.clusterId}}</td>
+        </ng-container>
+        <ng-container matColumnDef="Match">
+          <th mat-header-cell *matHeaderCellDef>Match Path</th>
+          <td mat-cell *matCellDef="let element">{{element.match?.path}}</td>
+        </ng-container>
+        
+        <ng-container matColumnDef="Actions">
+          <th mat-header-cell *matHeaderCellDef>Actions</th>
+          <td mat-cell *matCellDef="let element">
+            <div class="actions-cell">
+              <button mat-icon-button color="primary" (click)="editRoute(element)" matTooltip="Edit Route">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button mat-icon-button (click)="rawEditRoute(element)" matTooltip="Edit as Raw JSON" style="color: #9c27b0;">
+                <mat-icon>data_object</mat-icon>
+              </button>
+              <button mat-icon-button color="warn" (click)="deleteRoute(element)" matTooltip="Delete Route">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="routesColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: routesColumns;"></tr>
+        <tr class="mat-row" *matNoDataRow>
+          <td class="mat-cell" colspan="4">No routes configured yet.</td>
+        </tr>
+      </table>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card style="margin-top: 2rem;">
+    <mat-card-header>
+      <div class="card-header-actions">
+        <mat-card-title>Proxy Clusters</mat-card-title>
+        <button mat-raised-button color="primary" (click)="addCluster()">
+          <mat-icon>add</mat-icon> Add Cluster
+        </button>
+      </div>
+    </mat-card-header>
+    <mat-card-content>
+      <table mat-table [dataSource]="clusters" class="mat-elevation-z8" style="width: 100%; margin-top: 15px;">
+        <ng-container matColumnDef="ClusterId">
+          <th mat-header-cell *matHeaderCellDef>Cluster ID</th>
+          <td mat-cell *matCellDef="let element">{{element.clusterId}}</td>
+        </ng-container>
+        <ng-container matColumnDef="Destinations">
+          <th mat-header-cell *matHeaderCellDef>Destinations</th>
+          <td mat-cell *matCellDef="let element">
+            @if (element.destinations) {
+              @for (dest of element.destinations | keyvalue; track dest.key) {
+                <div class="dest-item">
+                  <code>{{ dest.value.address }}</code>
+                </div>
+              }
+            } @else {
+              No destinations
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="Actions">
+          <th mat-header-cell *matHeaderCellDef>Actions</th>
+          <td mat-cell *matCellDef="let element">
+            <div class="actions-cell">
+              <button mat-icon-button color="primary" (click)="editCluster(element)" matTooltip="Edit Cluster">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button mat-icon-button (click)="rawEditCluster(element)" matTooltip="Edit as Raw JSON" style="color: #9c27b0;">
+                <mat-icon>data_object</mat-icon>
+              </button>
+              <button mat-icon-button color="warn" (click)="deleteCluster(element)" matTooltip="Delete Cluster">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="clustersColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: clustersColumns;"></tr>
+        <tr class="mat-row" *matNoDataRow>
+          <td class="mat-cell" colspan="3">No clusters configured yet.</td>
+        </tr>
+      </table>
+    </mat-card-content>
+  </mat-card>
+</div>
+

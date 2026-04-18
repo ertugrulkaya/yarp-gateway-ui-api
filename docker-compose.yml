@@ -1,0 +1,20 @@
+services:
+  proxy-manager:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      # LiteDB files persist between restarts
+      - proxy-data:/app/data
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+      # Override JWT settings via env vars if needed:
+      # - Jwt__Key=YourSecretKeyHere
+      # - Jwt__Issuer=AntiGravityProxyAuth
+    restart: unless-stopped
+
+volumes:
+  proxy-data:

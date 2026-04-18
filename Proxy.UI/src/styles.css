@@ -1,0 +1,31 @@
+html, body { 
+  height: 100%; 
+  margin: 0; 
+  font-family: Roboto, "Helvetica Neue", sans-serif; 
+  background-color: #f5f5f5;
+}
+
+.sidenav-container {
+  height: 100vh;
+}
+
+.sidenav {
+  width: 250px;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.content-padding {
+  padding: 20px;
+}
+
+.card-container {
+  max-width: 600px;
+  margin: 2rem auto;
+}
+
+.full-width {
+  width: 100%;
+}

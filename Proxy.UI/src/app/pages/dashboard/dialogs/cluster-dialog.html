@@ -1,0 +1,281 @@
+<!-- Proxy.UI/src/app/pages/dashboard/dialogs/cluster-dialog.html -->
+<h2 mat-dialog-title>{{ data.cluster ? 'Edit' : 'Add' }} Cluster</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form">
+    <mat-tab-group dynamicHeight>
+
+      <!-- ── Tab 1: Destinations ───────────────────────────────────────── -->
+      <mat-tab label="Destinations">
+        <div class="tab-content">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Cluster ID</mat-label>
+            <input matInput formControlName="clusterId" [readonly]="!!data.cluster" placeholder="my-backend">
+            @if (form.get('clusterId')?.hasError('uniqueId')) {
+              <mat-error>Cluster ID already exists</mat-error>
+            }
+            @if (form.get('clusterId')?.hasError('required')) {
+              <mat-error>Required</mat-error>
+            }
+          </mat-form-field>
+
+          <div formArrayName="destinations">
+            @for (d of destinations.controls; track $index; let i = $index) {
+              <div [formGroupName]="i" class="dest-block">
+                <div class="dest-header">
+                  <span class="section-label">Destination {{ i + 1 }}</span>
+                  <button mat-icon-button color="warn" type="button" (click)="removeDestination(i)"
+                          [disabled]="destinations.length === 1" matTooltip="Remove destination">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </div>
+                <div class="row">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Name (key)</mat-label>
+                    <input matInput formControlName="key" placeholder="dest1">
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>Address</mat-label>
+                    <input matInput formControlName="address" placeholder="https://api.internal:8080">
+                    @if (destinations.at(i).get('address')?.hasError('pattern')) {
+                      <mat-error>Must start with http:// or https://</mat-error>
+                    }
+                  </mat-form-field>
+                </div>
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Health Check URL (optional)</mat-label>
+                  <input matInput formControlName="health" placeholder="https://api.internal:8080/health">
+                </mat-form-field>
+              </div>
+            }
+          </div>
+
+          <button mat-stroked-button type="button" (click)="addDestination()">
+            <mat-icon>add</mat-icon> Add Destination
+          </button>
+        </div>
+      </mat-tab>
+
+      <!-- ── Tab 2: Load Balancing ─────────────────────────────────────── -->
+      <mat-tab label="Load Balancing">
+        <div class="tab-content">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Load Balancing Policy</mat-label>
+            <mat-select formControlName="loadBalancingPolicy">
+              <mat-option value="">Default (RoundRobin)</mat-option>
+              @for (p of ['RoundRobin','LeastRequests','Random','PowerOfTwoChoices','FirstAlphabetical']; track p) {
+                <mat-option [value]="p">{{ p }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-divider></mat-divider>
+          <div class="section-label">Session Affinity</div>
+
+          <mat-checkbox formControlName="saEnabled">Enable Session Affinity</mat-checkbox>
+
+          @if (form.get('saEnabled')?.value) {
+            <div class="row">
+              <mat-form-field appearance="outline">
+                <mat-label>Policy</mat-label>
+                <mat-select formControlName="saPolicy">
+                  <mat-option value="Cookie">Cookie</mat-option>
+                  <mat-option value="CustomHeader">CustomHeader</mat-option>
+                </mat-select>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Failure Policy</mat-label>
+                <mat-select formControlName="saFailurePolicy">
+                  <mat-option value="Redistribute">Redistribute</mat-option>
+                  <mat-option value="Return503Error">Return503Error</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Affinity Key Name</mat-label>
+              <input matInput formControlName="saAffinityKeyName" placeholder=".AspNetCore.Yarp.SA">
+            </mat-form-field>
+
+            <div class="section-label">Cookie Settings</div>
+            <div class="row">
+              <mat-form-field appearance="outline">
+                <mat-label>Path</mat-label>
+                <input matInput formControlName="saCookiePath">
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Domain</mat-label>
+                <input matInput formControlName="saCookieDomain">
+              </mat-form-field>
+            </div>
+            <div class="row">
+              <mat-form-field appearance="outline">
+                <mat-label>SameSite</mat-label>
+                <mat-select formControlName="saCookieSameSite">
+                  @for (s of ['Lax','Strict','None']; track s) {
+                    <mat-option [value]="s">{{ s }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Secure Policy</mat-label>
+                <mat-select formControlName="saCookieSecurePolicy">
+                  @for (s of ['SameAsRequest','Always','None']; track s) {
+                    <mat-option [value]="s">{{ s }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            </div>
+            <div class="row">
+              <mat-checkbox formControlName="saCookieHttpOnly">HttpOnly</mat-checkbox>
+              <mat-checkbox formControlName="saCookieIsEssential">IsEssential</mat-checkbox>
+            </div>
+          }
+        </div>
+      </mat-tab>
+
+      <!-- ── Tab 3: Health Check ───────────────────────────────────────── -->
+      <mat-tab label="Health Check">
+        <div class="tab-content">
+          <div class="section-label">Active Health Check</div>
+          <mat-checkbox formControlName="hcActiveEnabled">Enable Active Health Check</mat-checkbox>
+
+          @if (form.get('hcActiveEnabled')?.value) {
+            <div class="row">
+              <mat-form-field appearance="outline">
+                <mat-label>Interval</mat-label>
+                <input matInput formControlName="hcActiveInterval" placeholder="00:00:15">
+                <mat-hint>hh:mm:ss</mat-hint>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Timeout</mat-label>
+                <input matInput formControlName="hcActiveTimeout" placeholder="00:00:10">
+                <mat-hint>hh:mm:ss</mat-hint>
+              </mat-form-field>
+            </div>
+            <div class="row">
+              <mat-form-field appearance="outline">
+                <mat-label>Policy</mat-label>
+                <mat-select formControlName="hcActivePolicy">
+                  <mat-option value="ConsecutiveFailures">ConsecutiveFailures</mat-option>
+                </mat-select>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Health Path</mat-label>
+                <input matInput formControlName="hcActivePath" placeholder="/health">
+              </mat-form-field>
+            </div>
+          }
+
+          <mat-divider></mat-divider>
+          <div class="section-label">Passive Health Check</div>
+          <mat-checkbox formControlName="hcPassiveEnabled">Enable Passive Health Check</mat-checkbox>
+
+          @if (form.get('hcPassiveEnabled')?.value) {
+            <div class="row">
+              <mat-form-field appearance="outline">
+                <mat-label>Policy</mat-label>
+                <mat-select formControlName="hcPassivePolicy">
+                  <mat-option value="TransportFailureRate">TransportFailureRate</mat-option>
+                </mat-select>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Reactivation Period</mat-label>
+                <input matInput formControlName="hcPassiveReactivation" placeholder="00:02:00">
+                <mat-hint>hh:mm:ss</mat-hint>
+              </mat-form-field>
+            </div>
+          }
+        </div>
+      </mat-tab>
+
+      <!-- ── Tab 4: HTTP ───────────────────────────────────────────────── -->
+      <mat-tab label="HTTP">
+        <div class="tab-content">
+          <div class="section-label">HTTP Client</div>
+          <mat-checkbox formControlName="httpClientDangerousCert">
+            Accept Any Server Certificate (DangerousAcceptAnyServerCertificate)
+          </mat-checkbox>
+          <div class="row">
+            <mat-form-field appearance="outline">
+              <mat-label>Max Connections Per Server</mat-label>
+              <input matInput type="number" formControlName="httpClientMaxConn" placeholder="e.g. 100">
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Request Header Encoding</mat-label>
+              <input matInput formControlName="httpClientReqEncoding" placeholder="e.g. utf-8">
+            </mat-form-field>
+          </div>
+          <div class="row">
+            <mat-form-field appearance="outline">
+              <mat-label>Response Header Encoding</mat-label>
+              <input matInput formControlName="httpClientResEncoding" placeholder="e.g. utf-8">
+            </mat-form-field>
+          </div>
+          <mat-checkbox formControlName="httpClientHttp1">Enable Multiple HTTP/1.1 Connections</mat-checkbox>
+          <mat-checkbox formControlName="httpClientHttp2">Enable Multiple HTTP/2 Connections</mat-checkbox>
+
+          <mat-divider></mat-divider>
+          <div class="section-label">HTTP Request Forwarding</div>
+          <div class="row">
+            <mat-form-field appearance="outline">
+              <mat-label>Activity Timeout</mat-label>
+              <input matInput formControlName="httpReqTimeout" placeholder="00:01:40">
+              <mat-hint>hh:mm:ss — default 100 seconds</mat-hint>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>HTTP Version</mat-label>
+              <mat-select formControlName="httpReqVersion">
+                <mat-option value="">Default</mat-option>
+                @for (v of ['1.0','1.1','2','3']; track v) {
+                  <mat-option [value]="v">HTTP/{{ v }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Version Policy</mat-label>
+            <mat-select formControlName="httpReqVersionPolicy">
+              <mat-option value="">Default</mat-option>
+              @for (p of ['RequestVersionOrLower','RequestVersionOrHigher','RequestVersionExact']; track p) {
+                <mat-option [value]="p">{{ p }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-checkbox formControlName="httpReqBuffering">Allow Response Buffering</mat-checkbox>
+        </div>
+      </mat-tab>
+
+      <!-- ── Tab 5: Metadata ───────────────────────────────────────────── -->
+      <mat-tab label="Metadata">
+        <div class="tab-content">
+          <div formArrayName="metadata">
+            @for (m of metadata.controls; track $index; let i = $index) {
+              <div [formGroupName]="i" class="array-row">
+                <mat-form-field appearance="outline">
+                  <mat-label>Key</mat-label>
+                  <input matInput formControlName="key">
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Value</mat-label>
+                  <input matInput formControlName="value">
+                </mat-form-field>
+                <button mat-icon-button color="warn" type="button" (click)="removeMetadata(i)">
+                  <mat-icon>remove_circle</mat-icon>
+                </button>
+              </div>
+            }
+          </div>
+          <button mat-stroked-button type="button" (click)="addMetadata()">
+            <mat-icon>add</mat-icon> Add Metadata
+          </button>
+        </div>
+      </mat-tab>
+
+    </mat-tab-group>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">Cancel</button>
+  <button mat-raised-button color="primary" [disabled]="form.invalid" (click)="onSave()">Save</button>
+</mat-dialog-actions>

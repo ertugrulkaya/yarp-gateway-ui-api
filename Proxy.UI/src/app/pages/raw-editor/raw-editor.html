@@ -1,0 +1,63 @@
+<!-- Proxy.UI/src/app/pages/raw-editor/raw-editor.html -->
+<div class="editor-container">
+
+  <!-- ── Main editor ──────────────────────────────────────────────────────── -->
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>Raw JSON Configuration</mat-card-title>
+      <div class="header-actions">
+        <button mat-stroked-button (click)="toggleImport()" [color]="showImport ? 'warn' : 'primary'"
+                matTooltip="Import from YARP appsettings.json format">
+          <mat-icon>{{ showImport ? 'close' : 'upload' }}</mat-icon>
+          {{ showImport ? 'Cancel Import' : 'Import YARP Format' }}
+        </button>
+        <button mat-raised-button color="accent" (click)="saveConfig()">
+          <mat-icon>save</mat-icon> Save & Apply
+        </button>
+      </div>
+    </mat-card-header>
+
+    <mat-card-content>
+      <p class="hint">
+        Full config in <code>&#123; "routes": [...], "clusters": [...] &#125;</code> format.
+        Saving overwrites all routes and clusters instantly.
+      </p>
+      <mat-form-field appearance="outline" class="full-width">
+        <textarea matInput rows="28" [(ngModel)]="rawJson" class="mono"></textarea>
+      </mat-form-field>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- ── Import panel ─────────────────────────────────────────────────────── -->
+  @if (showImport) {
+    <mat-card class="import-card">
+      <mat-card-header>
+        <mat-card-title>Import YARP Format</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <p class="hint">
+          Paste your YARP config below. Accepted formats:
+        </p>
+        <ul class="hint-list">
+          <li>Full <code>appsettings.json</code> — <code>&#123; "ReverseProxy": &#123; "Routes": &#123;...&#125;, "Clusters": &#123;...&#125; &#125; &#125;</code></li>
+          <li>ReverseProxy section — <code>&#123; "Routes": &#123;...&#125;, "Clusters": &#123;...&#125; &#125;</code></li>
+          <li>Routes-only dict — <code>&#123; "routeId": &#123; "ClusterId": "...", "Match": &#123;...&#125; &#125; &#125;</code></li>
+        </ul>
+        <p class="hint">
+          Duplicate route/cluster IDs are skipped. Transform keys (PathRemovePrefix, RequestHeader, etc.) are preserved as-is.
+        </p>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Paste YARP config here</mat-label>
+          <textarea matInput rows="18" [(ngModel)]="importJson" class="mono"
+                    placeholder='{ "Routes": { "my-route": { "ClusterId": "my-cluster", "Match": { "Path": "/api/{**catch-all}" } } }, "Clusters": { "my-cluster": { "Destinations": { "dest1": { "Address": "http://backend:8080" } } } } }'></textarea>
+        </mat-form-field>
+        <div class="import-actions">
+          <button mat-raised-button color="primary" (click)="convertAndMerge()" [disabled]="!importJson.trim()">
+            <mat-icon>merge</mat-icon> Convert & Merge into Editor
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  }
+
+</div>

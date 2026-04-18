@@ -1,0 +1,274 @@
+<!-- Proxy.UI/src/app/pages/dashboard/dialogs/route-dialog.html -->
+<h2 mat-dialog-title>{{ data.route ? 'Edit' : 'Add' }} Route</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form">
+    <mat-tab-group dynamicHeight>
+
+      <!-- ── Tab 1: Match ─────────────────────────────────────────────── -->
+      <mat-tab label="Match">
+        <div class="tab-content">
+
+          <div class="row">
+            <mat-form-field appearance="outline">
+              <mat-label>Route ID</mat-label>
+              <input matInput formControlName="routeId" [readonly]="!!data.route" placeholder="my-api-route">
+              @if (form.get('routeId')?.hasError('uniqueId')) {
+              <mat-error>Route ID already exists</mat-error>
+              }
+              @if (form.get('routeId')?.hasError('required')) {
+              <mat-error>Required</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Cluster</mat-label>
+              <mat-select formControlName="clusterId">
+                @for (c of data.clusters; track c.clusterId) {
+                <mat-option [value]="c.clusterId">{{ c.clusterId }}</mat-option>
+                }
+              </mat-select>
+              @if (form.get('clusterId')?.hasError('required')) {
+              <mat-error>Required</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Match Path</mat-label>
+            <input matInput formControlName="path" placeholder="/api/{**catch-all}">
+            <mat-hint>Supports YARP path templates and wildcard segments</mat-hint>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>HTTP Methods</mat-label>
+            <mat-select formControlName="methods" multiple>
+              @for (m of ['GET','POST','PUT','DELETE','PATCH','HEAD','OPTIONS']; track m) {
+              <mat-option [value]="m">{{ m }}</mat-option>
+              }
+            </mat-select>
+            <mat-hint>Empty = all methods allowed</mat-hint>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Hosts</mat-label>
+            <mat-chip-grid #hostGrid>
+              @for (h of hosts; track h) {
+              <mat-chip-row (removed)="removeHost(h)">
+                {{ h }}
+                <button matChipRemove><mat-icon>cancel</mat-icon></button>
+              </mat-chip-row>
+              }
+              <input placeholder="example.com (Enter to add)" [matChipInputFor]="hostGrid"
+                [matChipInputSeparatorKeyCodes]="separatorKeyCodes" (matChipInputTokenEnd)="addHost($event)">
+            </mat-chip-grid>
+            <mat-hint>Empty = match all hosts</mat-hint>
+          </mat-form-field>
+
+          <mat-divider></mat-divider>
+          <div class="section-label">Request Headers Filter</div>
+
+          <div formArrayName="headers">
+            @for (h of headers.controls; track $index; let i = $index) {
+            <div [formGroupName]="i" class="array-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Name</mat-label>
+                <input matInput formControlName="name">
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Value(s)</mat-label>
+                <input matInput formControlName="value" placeholder="Comma-separated">
+              </mat-form-field>
+              <mat-form-field appearance="outline" style="max-width:140px">
+                <mat-label>Mode</mat-label>
+                <mat-select formControlName="mode">
+                  @for (m of ['ExactHeader','HeaderPrefix','Contains','NotContains','Exists','NotExists']; track m) {
+                  <mat-option [value]="m">{{ m }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+              <mat-checkbox formControlName="isCaseSensitive" matTooltip="Case Sensitive">Cs</mat-checkbox>
+              <button mat-icon-button color="warn" (click)="removeHeader(i)">
+                <mat-icon>remove_circle</mat-icon>
+              </button>
+            </div>
+            }
+          </div>
+          <button mat-stroked-button type="button" (click)="addHeader()">
+            <mat-icon>add</mat-icon> Add Header Filter
+          </button>
+
+          <mat-divider></mat-divider>
+          <div class="section-label">Query Parameters Filter</div>
+
+          <div formArrayName="queryParameters">
+            @for (q of queryParameters.controls; track $index; let i = $index) {
+            <div [formGroupName]="i" class="array-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Name</mat-label>
+                <input matInput formControlName="name">
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Value(s)</mat-label>
+                <input matInput formControlName="value" placeholder="Comma-separated">
+              </mat-form-field>
+              <mat-form-field appearance="outline" style="max-width:130px">
+                <mat-label>Mode</mat-label>
+                <mat-select formControlName="mode">
+                  @for (m of ['Exact','Contains','NotContains','Exists','NotExists']; track m) {
+                  <mat-option [value]="m">{{ m }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+              <mat-checkbox formControlName="isCaseSensitive" matTooltip="Case Sensitive">Cs</mat-checkbox>
+              <button mat-icon-button color="warn" (click)="removeQueryParameter(i)">
+                <mat-icon>remove_circle</mat-icon>
+              </button>
+            </div>
+            }
+          </div>
+          <button mat-stroked-button type="button" (click)="addQueryParameter()">
+            <mat-icon>add</mat-icon> Add Query Filter
+          </button>
+
+        </div>
+      </mat-tab>
+
+      <!-- ── Tab 2: Transforms ────────────────────────────────────────── -->
+      <mat-tab label="Transforms">
+        <div class="tab-content">
+          <div class="section-label">Presets</div>
+          <div class="preset-row">
+            <button mat-stroked-button type="button"
+              (click)="addPresetTransform('pathRemovePrefix')">PathRemovePrefix</button>
+            <button mat-stroked-button type="button" (click)="addPresetTransform('pathSet')">PathSet</button>
+            <button mat-stroked-button type="button" (click)="addPresetTransform('pathPattern')">PathPattern</button>
+            <button mat-stroked-button type="button"
+              (click)="addPresetTransform('requestHeader')">RequestHeader</button>
+            <button mat-stroked-button type="button"
+              (click)="addPresetTransform('responseHeader')">ResponseHeader</button>
+            <button mat-stroked-button type="button"
+              (click)="addPresetTransform('requestHeadersCopy')">HeadersCopy</button>
+            <button mat-stroked-button type="button"
+              (click)="addPresetTransform('requestHeaderOrigHost')">OriginalHost</button>
+            <button mat-stroked-button type="button"
+              (click)="addPresetTransform('xForwardedPrefix')">X-Forwarded-Prefix</button>
+          </div>
+
+          <div formArrayName="transforms">
+            @for (t of transforms.controls; track $index; let ti = $index) {
+            <div class="transform-block">
+              <div class="transform-header">
+                <span>Transform {{ ti + 1 }}</span>
+                <button mat-icon-button color="warn" type="button" (click)="removeTransform(ti)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+              <div [formGroupName]="ti">
+                <div formArrayName="entries">
+                @for (e of getTransformEntries(ti).controls; track $index; let ei = $index) {
+                <div [formGroupName]="ei" class="array-row">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Key</mat-label>
+                    <input matInput formControlName="key">
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>Value</mat-label>
+                    <input matInput formControlName="value">
+                  </mat-form-field>
+                  <button mat-icon-button type="button" (click)="removeTransformEntry(ti, ei)">
+                    <mat-icon>remove</mat-icon>
+                  </button>
+                </div>
+                }
+                </div>
+              </div>
+              <button mat-stroked-button type="button" (click)="addTransformEntry(ti)">
+                <mat-icon>add</mat-icon> Entry
+              </button>
+            </div>
+            }
+          </div>
+
+          <button mat-raised-button type="button" (click)="addTransform()">
+            <mat-icon>add</mat-icon> Add Custom Transform
+          </button>
+        </div>
+      </mat-tab>
+
+      <!-- ── Tab 3: Policies ──────────────────────────────────────────── -->
+      <mat-tab label="Policies">
+        <div class="tab-content">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Authorization Policy</mat-label>
+            <input matInput formControlName="authorizationPolicy" placeholder="e.g. Default or Anonymous">
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>CORS Policy</mat-label>
+            <input matInput formControlName="corsPolicy" placeholder="e.g. myCorsPolicy">
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Rate Limiter Policy</mat-label>
+            <input matInput formControlName="rateLimiterPolicy">
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Timeout Policy</mat-label>
+            <input matInput formControlName="timeoutPolicy">
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Output Cache Policy</mat-label>
+            <input matInput formControlName="outputCachePolicy">
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Max Request Body Size (bytes)</mat-label>
+            <input matInput type="number" formControlName="maxRequestBodySize" placeholder="e.g. 10485760">
+            <mat-hint>Leave empty for default. -1 = unlimited.</mat-hint>
+          </mat-form-field>
+        </div>
+      </mat-tab>
+
+      <!-- ── Tab 4: Advanced ──────────────────────────────────────────── -->
+      <mat-tab label="Advanced">
+        <div class="tab-content">
+          <mat-form-field appearance="outline" style="max-width: 200px">
+            <mat-label>Order</mat-label>
+            <input matInput type="number" formControlName="order" placeholder="e.g. -1, 0, 1">
+            <mat-hint>Lower = higher priority. Negative allowed.</mat-hint>
+          </mat-form-field>
+        </div>
+      </mat-tab>
+
+      <!-- ── Tab 5: Metadata ──────────────────────────────────────────── -->
+      <mat-tab label="Metadata">
+        <div class="tab-content">
+          <div formArrayName="metadata">
+            @for (m of metadata.controls; track $index; let i = $index) {
+            <div [formGroupName]="i" class="array-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Key</mat-label>
+                <input matInput formControlName="key">
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Value</mat-label>
+                <input matInput formControlName="value">
+              </mat-form-field>
+              <button mat-icon-button color="warn" type="button" (click)="removeMetadata(i)">
+                <mat-icon>remove_circle</mat-icon>
+              </button>
+            </div>
+            }
+          </div>
+          <button mat-stroked-button type="button" (click)="addMetadata()">
+            <mat-icon>add</mat-icon> Add Metadata
+          </button>
+        </div>
+      </mat-tab>
+
+    </mat-tab-group>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">Cancel</button>
+  <button mat-raised-button color="primary" [disabled]="form.invalid" (click)="onSave()">Save</button>
+</mat-dialog-actions>
