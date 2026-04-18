@@ -1,35 +1,43 @@
 @if (authService.isAuthenticated()) {
 <mat-sidenav-container class="sidenav-container">
   <mat-sidenav #sidenav mode="side" opened class="sidenav">
-    <mat-toolbar color="primary">YARP Manager</mat-toolbar>
+    <div class="sidenav-header">
+      <mat-icon class="sidenav-logo">lan</mat-icon>
+      <span class="sidenav-title">YARP Manager</span>
+    </div>
+
     <mat-nav-list>
-      <a mat-list-item routerLink="/dashboard" routerLinkActive="active">
+      <a mat-list-item routerLink="/dashboard" routerLinkActive="active" ariaCurrentWhenActive="page">
         <mat-icon matListItemIcon>dashboard</mat-icon>
         <span matListItemTitle>Dashboard</span>
       </a>
-      <a mat-list-item routerLink="/logs" routerLinkActive="active">
-        <mat-icon matListItemIcon>history</mat-icon>
-        <span matListItemTitle>Logs</span>
+      <a mat-list-item routerLink="/logs" routerLinkActive="active" ariaCurrentWhenActive="page">
+        <mat-icon matListItemIcon>receipt_long</mat-icon>
+        <span matListItemTitle>Traffic Logs</span>
       </a>
-      <a mat-list-item routerLink="/raw-editor" routerLinkActive="active">
-        <mat-icon matListItemIcon>code</mat-icon>
+      <a mat-list-item routerLink="/raw-editor" routerLinkActive="active" ariaCurrentWhenActive="page">
+        <mat-icon matListItemIcon>tune</mat-icon>
         <span matListItemTitle>Raw Config</span>
       </a>
-      <a mat-list-item routerLink="/history" routerLinkActive="active">
+      <a mat-list-item routerLink="/history" routerLinkActive="active" ariaCurrentWhenActive="page">
         <mat-icon matListItemIcon>manage_history</mat-icon>
         <span matListItemTitle>Change History</span>
       </a>
-
     </mat-nav-list>
+
+    <div class="sidenav-footer">
+      <mat-icon>account_circle</mat-icon>
+      <span class="sidenav-username">{{ authService.getUsername() }}</span>
+    </div>
   </mat-sidenav>
 
   <mat-sidenav-content>
     <mat-toolbar>
-      <button mat-icon-button (click)="sidenav.toggle()">
+      <button mat-icon-button (click)="sidenav.toggle()" aria-label="Toggle navigation menu">
         <mat-icon>menu</mat-icon>
       </button>
       <span class="spacer"></span>
-      <button mat-button (click)="logout()">
+      <button mat-button (click)="logout()" aria-label="Logout">
         <mat-icon>logout</mat-icon> Logout
       </button>
     </mat-toolbar>

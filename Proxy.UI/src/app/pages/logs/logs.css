@@ -23,10 +23,13 @@ table {
   font-size: 11px;
 }
 
-.GET { background-color: #61affe; color: white; }
-.POST { background-color: #49cc90; color: white; }
-.PUT { background-color: #fca130; color: white; }
-.DELETE { background-color: #f93e3e; color: white; }
+.GET     { background-color: #61affe; color: white; }
+.POST    { background-color: #49cc90; color: white; }
+.PUT     { background-color: #fca130; color: white; }
+.DELETE  { background-color: #f93e3e; color: white; }
+.PATCH   { background-color: #50e3c2; color: #004d40; }
+.HEAD    { background-color: #9b59b6; color: white; }
+.OPTIONS { background-color: #95a5a6; color: white; }
 
 .status-code {
   font-weight: bold;
@@ -73,3 +76,34 @@ mat-card-header {
   align-items: center;
   padding-top: 4px;
 }
+
+.hidden { display: none; }
+
+/* ── Skeleton loader ──────────────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  border-radius: 4px;
+  height: 14px;
+}
+
+.skeleton-rows { padding: 4px 0; }
+
+.skeleton-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.skeleton-col-xs  { flex: 0 0 48px; }
+.skeleton-col-sm  { flex: 0 0 80px; }
+.skeleton-col-md  { flex: 0 0 120px; }
+.skeleton-col-lg  { flex: 1 1 200px; }

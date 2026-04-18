@@ -11,6 +11,8 @@ html, body {
 
 .sidenav {
   width: 250px;
+  display: flex;
+  flex-direction: column;
 }
 
 .spacer {
@@ -21,10 +23,6 @@ html, body {
   padding: 20px;
 }
 
-.card-container {
-  max-width: 600px;
-  margin: 2rem auto;
-}
 
 .full-width {
   width: 100%;

@@ -48,6 +48,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   readonly routes = signal<RouteConfig[]>([]);
   readonly clusters = signal<ClusterConfig[]>([]);
   readonly isSaving = signal(false);
+  readonly isLoading = signal(false);
+  readonly skeletonRows = Array(4).fill(0);
 
   // Derived: cluster ID list for route dialog dropdown
   readonly clusterRefs = computed(() => this.clusters().map(c => ({ clusterId: c.clusterId })));
@@ -65,12 +67,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
   ngOnDestroy() { this.routerSub?.unsubscribe(); }
 
   loadConfig() {
+    this.isLoading.set(true);
     this.proxyService.loadAll().subscribe({
       next: ({ routes, clusters }) => {
         this.routes.set(routes);
         this.clusters.set(clusters);
+        this.isLoading.set(false);
       },
-      error: () => this.snackBar.open('Error loading configuration.', 'Close', { duration: 3000 }),
+      error: () => {
+        this.isLoading.set(false);
+        this.snackBar.open('Error loading configuration.', 'Close', { duration: 3000 });
+      },
     });
   }
 

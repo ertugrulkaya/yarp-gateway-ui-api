@@ -1,0 +1,58 @@
+/* ── Sidenav header ──────────────────────────────────────────────────── */
+.sidenav-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px;
+  background: var(--mat-sys-primary, #1976d2);
+  color: white;
+}
+
+.sidenav-logo {
+  font-size: 28px;
+  width: 28px;
+  height: 28px;
+  opacity: 0.9;
+}
+
+.sidenav-title {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* ── Active nav item (T5-2) ──────────────────────────────────────────── */
+mat-nav-list a.active {
+  background-color: var(--mat-sys-secondary-container, #dde3ea);
+  border-radius: 28px;
+  font-weight: 600;
+}
+
+mat-nav-list a.active mat-icon {
+  color: var(--mat-sys-primary, #1976d2);
+}
+
+mat-nav-list a {
+  margin: 2px 8px;
+  border-radius: 28px;
+  transition: background-color 0.15s ease;
+}
+
+/* ── Sidenav footer (user info) ──────────────────────────────────────── */
+.sidenav-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  margin-top: auto;
+  border-top: 1px solid var(--mat-sys-outline-variant, #e0e0e0);
+  font-size: 0.85rem;
+  color: var(--mat-sys-on-surface-variant, #666);
+}
+
+.sidenav-username {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

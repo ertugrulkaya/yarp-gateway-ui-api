@@ -42,6 +42,18 @@ export class AuthService {
     return localStorage.getItem('must_change_password') === 'true';
   }
 
+  getUsername(): string {
+    const token = localStorage.getItem('access_token');
+    if (!token) return '';
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name']
+        ?? payload['name']
+        ?? payload['sub']
+        ?? '';
+    } catch { return ''; }
+  }
+
   changePassword(data: any) {
     return this.http.post<{ message: string; token: string }>(`${this.apiUrl}/change-password`, data).pipe(
       tap(res => {

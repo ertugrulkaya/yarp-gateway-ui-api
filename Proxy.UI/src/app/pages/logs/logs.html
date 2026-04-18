@@ -75,8 +75,23 @@
     }
 
     <mat-card-content>
-      <div class="table-container">
-        <table mat-table [dataSource]="dataSource">
+      @if (isLoading()) {
+        <div class="skeleton-rows" aria-busy="true" aria-label="Loading logs...">
+          @for (i of skeletonRows; track i) {
+            <div class="skeleton-row">
+              <div class="skeleton skeleton-col-md"></div>
+              <div class="skeleton skeleton-col-xs"></div>
+              <div class="skeleton skeleton-col-lg"></div>
+              <div class="skeleton skeleton-col-sm"></div>
+              <div class="skeleton skeleton-col-md"></div>
+              <div class="skeleton skeleton-col-xs"></div>
+              <div class="skeleton skeleton-col-sm"></div>
+            </div>
+          }
+        </div>
+      }
+      <div class="table-container" [class.hidden]="isLoading()">
+        <table mat-table [dataSource]="dataSource" aria-label="Traffic logs">
 
           <ng-container matColumnDef="timestamp">
             <th mat-header-cell *matHeaderCellDef> Time </th>
@@ -122,7 +137,7 @@
           <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
           <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
         </table>
-      </div>
+      </div><!-- /table-container -->
 
       <mat-paginator [length]="totalLogs"
                      [pageSize]="pageSize"

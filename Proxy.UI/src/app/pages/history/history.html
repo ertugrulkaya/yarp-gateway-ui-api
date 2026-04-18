@@ -1,8 +1,8 @@
-<mat-card>
+<mat-card class="history-card">
   <mat-card-header>
-    <div style="display:flex; justify-content:space-between; align-items:center; width:100%">
+    <div class="history-header">
       <mat-card-title>Config Change History</mat-card-title>
-      <button mat-icon-button (click)="load()" matTooltip="Refresh">
+      <button mat-icon-button (click)="load()" matTooltip="Refresh" aria-label="Refresh history">
         <mat-icon>refresh</mat-icon>
       </button>
     </div>
@@ -10,9 +10,19 @@
 
   <mat-card-content>
     @if (loading) {
-      <p style="padding:16px; color:#888">Loading...</p>
+      <div class="skeleton-rows" aria-busy="true" aria-label="Loading history...">
+        @for (i of skeletonRows; track i) {
+          <div class="skeleton-row">
+            <div class="skeleton skeleton-col-md"></div>
+            <div class="skeleton skeleton-col-sm"></div>
+            <div class="skeleton skeleton-col-sm"></div>
+            <div class="skeleton skeleton-col-lg"></div>
+            <div class="skeleton skeleton-col-sm"></div>
+          </div>
+        }
+      </div>
     } @else {
-      <table mat-table [dataSource]="entries" class="mat-elevation-z2" style="width:100%">
+      <table mat-table [dataSource]="entries" class="mat-elevation-z2 full-table">
 
         <ng-container matColumnDef="changedAt">
           <th mat-header-cell *matHeaderCellDef>Time</th>
@@ -45,7 +55,8 @@
           <th mat-header-cell *matHeaderCellDef></th>
           <td mat-cell *matCellDef="let e">
             @if (e.oldValueJson || e.newValueJson) {
-              <button mat-icon-button matTooltip="View diff" (click)="openDiff(e)">
+              <button mat-icon-button matTooltip="View diff" (click)="openDiff(e)"
+                      [attr.aria-label]="'View diff for ' + e.entityType + ' ' + e.entityId">
                 <mat-icon>difference</mat-icon>
               </button>
             }
@@ -55,16 +66,16 @@
         <tr mat-header-row *matHeaderRowDef="columns"></tr>
         <tr mat-row *matRowDef="let row; columns: columns;"></tr>
         <tr class="mat-row" *matNoDataRow>
-          <td class="mat-cell" colspan="6" style="padding:16px; text-align:center">No history yet.</td>
+          <td class="mat-cell no-data" colspan="6">No history yet.</td>
         </tr>
       </table>
 
       <div class="pagination">
         <span>{{ offset + 1 }}–{{ offset + limit > total ? total : offset + limit }} of {{ total }}</span>
-        <button mat-icon-button [disabled]="offset === 0" (click)="prevPage()">
+        <button mat-icon-button [disabled]="offset === 0" (click)="prevPage()" aria-label="Previous page">
           <mat-icon>chevron_left</mat-icon>
         </button>
-        <button mat-icon-button [disabled]="offset + limit >= total" (click)="nextPage()">
+        <button mat-icon-button [disabled]="offset + limit >= total" (click)="nextPage()" aria-label="Next page">
           <mat-icon>chevron_right</mat-icon>
         </button>
       </div>

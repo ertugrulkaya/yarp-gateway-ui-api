@@ -49,6 +49,8 @@ export class LogsComponent implements OnInit {
 
   readonly httpMethods = HTTP_METHODS;
   readonly filtersOpen = signal(false);
+  readonly isLoading = signal(false);
+  readonly skeletonRows = Array(8).fill(0);
 
   // Filter state
   filterClusterId = '';
@@ -80,10 +82,16 @@ export class LogsComponent implements OnInit {
     if (this.filterClientIp)   filters.clientIp   = this.filterClientIp;
     if (this.filterMethod)     filters.method     = this.filterMethod;
 
+    this.isLoading.set(true);
     this.logsService.getLogs(this.pageSize, offset, filters).subscribe({
       next: (response) => {
         this.dataSource.data = response.data;
         this.totalLogs = response.total;
+        this.isLoading.set(false);
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.isLoading.set(false);
         this.cdr.markForCheck();
       }
     });

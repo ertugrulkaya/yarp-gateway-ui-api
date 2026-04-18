@@ -37,6 +37,7 @@ export class HistoryComponent implements OnInit {
   loading = false;
   limit = 100;
   offset = 0;
+  readonly skeletonRows = Array(6).fill(0);
 
   columns = ['changedAt', 'action', 'entityType', 'entityId', 'changedBy', 'diff'];
 
