@@ -32,7 +32,8 @@ public class LiteDbService
             {
                 Username = "Admin",
                 PasswordHash = hash,
-                PasswordSalt = salt
+                PasswordSalt = salt,
+                MustChangePassword = true
             });
         }
     }
@@ -54,6 +55,9 @@ public class LiteDbService
     {
         var clusters = _db.GetCollection<ClusterConfigWrapper>("clusters");
         var routes   = _db.GetCollection<RouteConfigWrapper>("routes");
+
+        // Indexes (idempotent — safe to call on every startup)
+        routes.EnsureIndex(x => x.Config.ClusterId);
 
         if (clusters.Count() > 0 || routes.Count() > 0)
             return; // already seeded

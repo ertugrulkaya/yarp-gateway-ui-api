@@ -1,7 +1,7 @@
 // Proxy.UI/src/app/pages/dashboard/dialogs/route-dialog.ts
 import { Component, Inject, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { COMMA, ENTER } from '@angular/cdk/keycodes';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -52,6 +52,7 @@ export class RouteDialogComponent {
 
   readonly separatorKeyCodes = [ENTER, COMMA];
   hosts: string[] = [];
+  saving = false;
   form: FormGroup;
 
   constructor(@Inject(MAT_DIALOG_DATA) public data: RouteDialogData) {
@@ -98,11 +99,15 @@ export class RouteDialogComponent {
 
   // ── Accessors ──────────────────────────────────────────────────────────────
 
-  get headers() { return this.form.get('headers') as FormArray; }
-  get queryParameters() { return this.form.get('queryParameters') as FormArray; }
-  get transforms() { return this.form.get('transforms') as FormArray; }
-  get metadata() { return this.form.get('metadata') as FormArray; }
-  getTransformEntries(i: number) { return this.transforms.at(i).get('entries') as FormArray; }
+  get headers(): FormArray { return this.form.get('headers') as FormArray ?? new FormArray<AbstractControl>([]); }
+  get queryParameters(): FormArray { return this.form.get('queryParameters') as FormArray ?? new FormArray<AbstractControl>([]); }
+  get transforms(): FormArray { return this.form.get('transforms') as FormArray ?? new FormArray<AbstractControl>([]); }
+  get metadata(): FormArray { return this.form.get('metadata') as FormArray ?? new FormArray<AbstractControl>([]); }
+  getTransformEntries(i: number): FormArray {
+    const group = this.transforms.at(i);
+    const fa = group?.get('entries');
+    return fa instanceof FormArray ? fa : new FormArray<AbstractControl>([]);
+  }
 
   // ── Hosts (chip list) ──────────────────────────────────────────────────────
 
@@ -164,7 +169,8 @@ export class RouteDialogComponent {
   // ── Save ───────────────────────────────────────────────────────────────────
 
   onSave() {
-    if (this.form.invalid) return;
+    if (this.form.invalid || this.saving) return;
+    this.saving = true;
     const v = this.form.value;
 
     const result: RouteConfig = {

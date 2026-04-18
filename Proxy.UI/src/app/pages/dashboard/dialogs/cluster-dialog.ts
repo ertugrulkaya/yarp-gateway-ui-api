@@ -1,7 +1,7 @@
 // Proxy.UI/src/app/pages/dashboard/dialogs/cluster-dialog.ts
 import { Component, Inject, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -45,6 +45,7 @@ export class ClusterDialogComponent {
   private fb = inject(FormBuilder);
   private dialogRef = inject(MatDialogRef<ClusterDialogComponent>);
 
+  saving = false;
   form: FormGroup;
 
   constructor(@Inject(MAT_DIALOG_DATA) public data: ClusterDialogData) {
@@ -106,8 +107,8 @@ export class ClusterDialogComponent {
 
   // ── Accessors ──────────────────────────────────────────────────────────────
 
-  get destinations() { return this.form.get('destinations') as FormArray; }
-  get metadata() { return this.form.get('metadata') as FormArray; }
+  get destinations(): FormArray { return this.form.get('destinations') as FormArray ?? new FormArray<AbstractControl>([]); }
+  get metadata(): FormArray { return this.form.get('metadata') as FormArray ?? new FormArray<AbstractControl>([]); }
 
   // ── Destinations ───────────────────────────────────────────────────────────
 
@@ -129,7 +130,8 @@ export class ClusterDialogComponent {
   // ── Save ───────────────────────────────────────────────────────────────────
 
   onSave() {
-    if (this.form.invalid) return;
+    if (this.form.invalid || this.saving) return;
+    this.saving = true;
     const v = this.form.value;
 
     const result: ClusterConfig = {

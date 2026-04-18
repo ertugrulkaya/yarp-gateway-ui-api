@@ -5,6 +5,7 @@ import { tap } from 'rxjs/operators';
 
 export interface LoginResponse {
   token: string;
+  mustChangePassword: boolean;
 }
 
 @Injectable({
@@ -21,6 +22,7 @@ export class AuthService {
       tap(res => {
         if (res && res.token) {
           localStorage.setItem('access_token', res.token);
+          localStorage.setItem('must_change_password', res.mustChangePassword ? 'true' : 'false');
         }
       })
     );
@@ -28,6 +30,7 @@ export class AuthService {
 
   logout() {
     localStorage.removeItem('access_token');
+    localStorage.removeItem('must_change_password');
     this.router.navigate(['/login']);
   }
 
@@ -35,7 +38,18 @@ export class AuthService {
     return !!localStorage.getItem('access_token');
   }
 
+  mustChangePassword(): boolean {
+    return localStorage.getItem('must_change_password') === 'true';
+  }
+
   changePassword(data: any) {
-    return this.http.post(`${this.apiUrl}/change-password`, data);
+    return this.http.post<{ message: string; token: string }>(`${this.apiUrl}/change-password`, data).pipe(
+      tap(res => {
+        if (res?.token) {
+          localStorage.setItem('access_token', res.token);
+          localStorage.setItem('must_change_password', 'false');
+        }
+      })
+    );
   }
 }

@@ -33,25 +33,13 @@ public static class YarpLoggingExtensions
                     ClientIp = context.Connection.RemoteIpAddress?.ToString(),
                     Method = context.Request.Method,
                     Path = context.Request.Path,
-                    QueryString = context.Request.QueryString.ToString(),
                     ClusterId = cluster?.ClusterId,
                     DestinationAddress = destination?.Model.Config.Address,
                     StatusCode = context.Response.StatusCode,
                     DurationMs = sw.Elapsed.TotalMilliseconds
                 };
 
-                // Background logging to not block the response
-                _ = Task.Run(() =>
-                {
-                    try
-                    {
-                        logService.LogRequest(logEntry);
-                    }
-                    catch
-                    {
-                        // Silently fail logging to not disrupt proxy traffic
-                    }
-                });
+                logService.Enqueue(logEntry);
             }
         });
     }

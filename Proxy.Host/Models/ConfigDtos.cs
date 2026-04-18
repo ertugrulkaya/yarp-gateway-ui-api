@@ -112,7 +112,6 @@ public class HttpClientDto
 {
     public bool? DangerousAcceptAnyServerCertificate { get; set; }
     public int? MaxConnectionsPerServer { get; set; }
-    public bool? EnableMultipleHttp1Connections { get; set; }
     public bool? EnableMultipleHttp2Connections { get; set; }
     public string? RequestHeaderEncoding { get; set; }   // e.g. "utf-8"
     public string? ResponseHeaderEncoding { get; set; }

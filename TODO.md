@@ -32,7 +32,7 @@
   - Angular login sayfası bu flag'i görünce zorunlu şifre değiştirme ekranına yönlendirsin
   - Şifre değiştirilmeden API çağrıları 403 döndürsün (middleware veya action filter ile)
 - **Tahmini süre:** 1 gün
-- [ ] Tamamlandı
+- [x] Tamamlandı
 
 ---
 
@@ -62,7 +62,7 @@
   }
   ```
 - **Tahmini süre:** 1 gün
-- [ ] Tamamlandı
+- [x] Tamamlandı
 
 ---
 
@@ -79,7 +79,7 @@
   - Her `UpdateConfig()` çağrısında eski config dispose edilsin
   - `GetConfig()` thread-safe olacak şekilde `volatile` veya lock kullan
 - **Tahmini süre:** 2 saat
-- [ ] Tamamlandı
+- [x] Tamamlandı
 
 ---
 
@@ -98,24 +98,16 @@
   this.cdr.markForCheck(); // ← EKLE
   ```
 - **Tahmini süre:** 15 dakika
-- [ ] Tamamlandı
+- [x] Tamamlandı
 
 ---
 
 ### T1-6 · `EnableMultipleHttp1Connections` Mapping Eksik
 - **Uzman:** 🟨
 - **Dosyalar:** `Proxy.Host/Providers/LiteDbProxyConfigProvider.cs`
-- **Sorun:** `ConfigDtos.cs`'de alan var, UI'da gösterilir, DB'ye kaydedilir ama `MapCluster()` içinde YARP'a aktarılmıyor. Sessiz hata.
-- **Yapılacak:**
-  ```csharp
-  httpClient = new HttpClientConfig
-  {
-      // ...mevcut alanlar...
-      EnableMultipleHttp1Connections = hcl.EnableMultipleHttp1Connections, // ← EKLE
-  };
-  ```
+- **Sorun:** `ConfigDtos.cs`'de alan var ama YARP v2.3 `HttpClientConfig` bu özelliği desteklemiyor. Alan DTO ve UI'dan kaldırıldı.
 - **Tahmini süre:** 15 dakika
-- [ ] Tamamlandı
+- [x] Tamamlandı (alan YARP'ta mevcut değil — DTO + UI'dan kaldırıldı)
 
 ---
 
@@ -135,7 +127,7 @@
   - `YarpLoggingMiddleware`'de sadece `channel.Writer.TryWrite(entry)` çağır (non-blocking)
   - Uygulama kapanırken channel drain edilsin (`StopAsync` içinde)
 - **Tahmini süre:** 2 gün
-- [ ] Tamamlandı
+- [x] Tamamlandı
 
 ---
 
@@ -165,7 +157,7 @@
   }
   ```
 - **Tahmini süre:** 1 gün
-- [ ] Tamamlandı
+- [x] Tamamlandı
 
 ---
 
@@ -180,7 +172,7 @@
   - Başarısız deneme sayısını `User` modeline veya in-memory cache'e kaydet
   - Locked durumda 429 Too Many Requests döndür
 - **Tahmini süre:** 1 gün
-- [ ] Tamamlandı
+- [x] Tamamlandı
 
 ---
 
@@ -206,7 +198,7 @@
   ```
   - Template'de null check ekle: `@if (getTransformEntries(ti); as entries)`
 - **Tahmini süre:** 1 gün
-- [ ] Tamamlandı
+- [x] Tamamlandı
 
 ---
 
@@ -224,7 +216,7 @@
   return throwError(() => err);
   ```
 - **Tahmini süre:** 30 dakika
-- [ ] Tamamlandı
+- [x] Tamamlandı
 
 ---
 
@@ -237,7 +229,7 @@
   - Loglamak gerekiyorsa sensitive param'ları filtrele (`token`, `key`, `secret`, `password` içeren key'leri `***` ile maskele)
   - `YarpLoggingMiddleware`'de sadece path'i logla, query string'i değil
 - **Tahmini süre:** 30 dakika
-- [ ] Tamamlandı
+- [x] Tamamlandı
 
 ---
 
@@ -252,7 +244,7 @@
   - Route/cluster dialog `onSave()` içinde save butonu submit sonrası disable et
   - `loadConfig()` çağrılarını debounce et (switchMap veya flag ile)
 - **Tahmini süre:** 1 gün
-- [ ] Tamamlandı
+- [x] Tamamlandı
 
 ---
 
@@ -280,7 +272,7 @@
   - `GET /api/proxyconfig/history` endpoint'i
   - Angular'da basit history sayfası (tarih, kim, ne değişti)
 - **Tahmini süre:** 2-3 gün
-- [ ] Tamamlandı
+- [x] Tamamlandı
 
 ---
 
@@ -304,7 +296,7 @@
   - DB erişimi, YARP provider durumu, log service durumu kontrol et
   - `/health` endpoint'i auth gerektirmesin
 - **Tahmini süre:** 1 gün
-- [ ] Tamamlandı
+- [x] Tamamlandı
 
 ---
 
@@ -321,7 +313,7 @@
   - Tüm BadRequest/NotFound/Conflict dönüşlerini standart formata taşı
   - Stack trace'i production'da response'a ekleme
 - **Tahmini süre:** 1 gün
-- [ ] Tamamlandı
+- [x] Tamamlandı
 
 ---
 
@@ -335,7 +327,7 @@
   - Dosya adına timestamp ekle: `proxy-config-2026-04-18.json`
   - Angular raw-editor'e "Export" ve "Import from file" butonları ekle
 - **Tahmini süre:** 2 gün
-- [ ] Tamamlandı
+- [x] Tamamlandı
 
 ---
 
@@ -359,7 +351,7 @@
   - `computed()` ile türetilen state'ler (örn. clusterIds listesi)
   - `effect()` ile side effect'ler (örn. snackbar)
 - **Tahmini süre:** 3 gün
-- [ ] Tamamlandı
+- [x] Tamamlandı
 
 ---
 
@@ -372,7 +364,7 @@
   - Signals kullanıldıktan sonra `markForCheck()` çağrıları zaten gereksiz olacak
   - İlk adım olarak dashboard, raw-editor, login component'leri
 - **Tahmini süre:** 1 gün (T3-5 ile birlikte)
-- [ ] Tamamlandı
+- [x] Tamamlandı
 
 ---
 
@@ -393,7 +385,7 @@
   // Composite: timestamp + cluster
   ```
 - **Tahmini süre:** 1 gün
-- [ ] Tamamlandı
+- [x] Tamamlandı
 
 ---
 
@@ -406,7 +398,7 @@
   - Yoksa 422 Unprocessable Entity dön: `"Cluster 'xyz' not found"`
   - `POST /raw` için de aynı validasyon
 - **Tahmini süre:** 1 gün
-- [ ] Tamamlandı
+- [x] Tamamlandı
 
 ---
 
@@ -419,7 +411,7 @@
   - `deleteRoute` ve `deleteCluster`'da `confirm()` yerine bu dialog'u kullan
   - Observable/Promise pattern ile sonucu al
 - **Tahmini süre:** 1 gün
-- [ ] Tamamlandı
+- [x] Tamamlandı
 
 ---
 
@@ -433,7 +425,7 @@
   - Controller action'larına XML comment + `[ProducesResponseType]` attribute'ları
   - JWT auth için Swagger'a Bearer token desteği ekle
 - **Tahmini süre:** 1 gün
-- [ ] Tamamlandı
+- [x] Tamamlandı
 
 ---
 

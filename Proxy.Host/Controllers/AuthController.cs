@@ -1,7 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.RateLimiting;
 using Proxy.Host.Models;
+using Microsoft.IdentityModel.Tokens;
 using Proxy.Host.Services;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -23,19 +24,47 @@ public class AuthController : ControllerBase
         _configuration = configuration;
     }
 
+    private const int MaxFailedAttempts = 5;
+    private static readonly TimeSpan LockoutDuration = TimeSpan.FromMinutes(15);
+
     [HttpPost("login")]
+    [EnableRateLimiting("LoginPolicy")]
     public IActionResult Login(LoginRequest request)
     {
         var users = _liteDbService.Database.GetCollection<User>("users");
         var user = users.FindOne(x => x.Username == request.Username);
 
-        if (user == null || !VerifyPasswordHash(request.Password, user.PasswordHash, user.PasswordSalt))
+        // Unknown user — return generic message (no user enumeration)
+        if (user == null)
+            return Unauthorized(new ApiError("UNAUTHORIZED", "Invalid credentials."));
+
+        // Account locked?
+        if (user.LockoutEnd.HasValue && user.LockoutEnd > DateTimeOffset.UtcNow)
         {
-            return Unauthorized("Invalid credentials.");
+            var remaining = (int)Math.Ceiling((user.LockoutEnd.Value - DateTimeOffset.UtcNow).TotalMinutes);
+            return StatusCode(429, new ApiError("TOO_MANY_REQUESTS", $"Account locked. Try again in {remaining} minute(s)."));
         }
 
+        if (!VerifyPasswordHash(request.Password, user.PasswordHash, user.PasswordSalt))
+        {
+            user.FailedLoginAttempts++;
+            if (user.FailedLoginAttempts >= MaxFailedAttempts)
+            {
+                user.LockoutEnd = DateTimeOffset.UtcNow.Add(LockoutDuration);
+                users.Update(user);
+                return StatusCode(429, new ApiError("TOO_MANY_REQUESTS", $"Too many failed attempts. Account locked for {(int)LockoutDuration.TotalMinutes} minutes."));
+            }
+            users.Update(user);
+            return Unauthorized(new ApiError("UNAUTHORIZED", "Invalid credentials."));
+        }
+
+        // Success — reset lockout state
+        user.FailedLoginAttempts = 0;
+        user.LockoutEnd = null;
+        users.Update(user);
+
         string token = CreateToken(user);
-        return Ok(new { Token = token });
+        return Ok(new { Token = token, MustChangePassword = user.MustChangePassword });
     }
 
     [HttpPost("change-password")]
@@ -43,22 +72,22 @@ public class AuthController : ControllerBase
     public IActionResult ChangePassword(ChangePasswordRequest request)
     {
         var username = User.FindFirstValue(ClaimTypes.Name);
-        if (username == null) return Unauthorized();
+        if (username == null) return Unauthorized(new ApiError("UNAUTHORIZED", "Token is missing or invalid."));
 
         var users = _liteDbService.Database.GetCollection<User>("users");
         var user = users.FindOne(x => x.Username == username);
 
         if (user == null || !VerifyPasswordHash(request.OldPassword, user.PasswordHash, user.PasswordSalt))
-        {
-            return BadRequest("Invalid old password.");
-        }
+            return BadRequest(new ApiError("BAD_REQUEST", "Invalid old password."));
 
         CreatePasswordHash(request.NewPassword, out byte[] hash, out byte[] salt);
         user.PasswordHash = hash;
         user.PasswordSalt = salt;
+        user.MustChangePassword = false;
         users.Update(user);
 
-        return Ok(new { Message = "Password updated successfully" });
+        string newToken = CreateToken(user);
+        return Ok(new { Message = "Password updated successfully", Token = newToken });
     }
 
     private bool VerifyPasswordHash(string password, byte[] passwordHash, byte[] passwordSalt)
@@ -82,13 +111,15 @@ public class AuthController : ControllerBase
     private string CreateToken(User user)
     {
         var jwtSettings = _configuration.GetSection("Jwt");
-        var key = Encoding.UTF8.GetBytes(jwtSettings.GetValue<string>("Key") ?? "SuperSecretHmacKeyForProxyManager2026!++AndItNeedsToBeAtLeast64CharactersLongToWorkWithSha512");
+        var key = Encoding.UTF8.GetBytes(jwtSettings.GetValue<string>("Key")!);
         
         List<Claim> claims = new List<Claim>
         {
             new Claim(ClaimTypes.Name, user.Username),
             new Claim(ClaimTypes.Role, "Admin")
         };
+        if (user.MustChangePassword)
+            claims.Add(new Claim("must_change_password", "true"));
 
         var creds = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha512Signature);
 

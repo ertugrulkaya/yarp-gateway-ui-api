@@ -1,5 +1,6 @@
 // Proxy.Host/Providers/LiteDbProxyConfigProvider.cs
 using LiteDB;
+using Microsoft.AspNetCore.Routing.Patterns;
 using Microsoft.Extensions.Primitives;
 using Proxy.Host.Models;
 using Proxy.Host.Services;
@@ -9,31 +10,81 @@ using Yarp.ReverseProxy.Forwarder;
 
 namespace Proxy.Host.Providers;
 
-public class LiteDbProxyConfigProvider : IProxyConfigProvider
+public class LiteDbProxyConfigProvider : IProxyConfigProvider, IDisposable
 {
     private readonly LiteDbService _liteDbService;
+    private readonly ILogger<LiteDbProxyConfigProvider> _logger;
+    private readonly ReaderWriterLockSlim _lock = new();
     private LiteDbProxyConfig _config;
+    private bool _disposed;
 
-    public LiteDbProxyConfigProvider(LiteDbService liteDbService)
+    public LiteDbProxyConfigProvider(LiteDbService liteDbService, ILogger<LiteDbProxyConfigProvider> logger)
     {
         _liteDbService = liteDbService;
+        _logger = logger;
         _config = LoadFromDb();
     }
 
-    public IProxyConfig GetConfig() => _config;
+    public IProxyConfig GetConfig()
+    {
+        _lock.EnterReadLock();
+        try { return _config; }
+        finally { _lock.ExitReadLock(); }
+    }
 
     public void UpdateConfig()
     {
-        var oldConfig = _config;
-        _config = LoadFromDb();
+        var newConfig = LoadFromDb();
+
+        _lock.EnterWriteLock();
+        LiteDbProxyConfig oldConfig;
+        try
+        {
+            oldConfig = _config;
+            _config = newConfig;
+        }
+        finally { _lock.ExitWriteLock(); }
+
+        // Signal YARP outside the lock — callbacks should not hold the lock
         oldConfig.SignalChange();
+        oldConfig.Dispose();
+    }
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        _lock.EnterReadLock();
+        LiteDbProxyConfig current;
+        try { current = _config; }
+        finally { _lock.ExitReadLock(); }
+        current.Dispose();
+        _lock.Dispose();
     }
 
     private LiteDbProxyConfig LoadFromDb()
     {
-        var routes = _liteDbService.Database
-            .GetCollection<RouteConfigWrapper>("routes")
-            .FindAll().Select(x => MapRoute(x.Config)).ToList();
+        var routes = new List<RouteConfig>();
+        foreach (var wrapper in _liteDbService.Database
+            .GetCollection<RouteConfigWrapper>("routes").FindAll())
+        {
+            try
+            {
+                // Eagerly validate the path so we never hand YARP an unparseable pattern
+                var path = wrapper.Config.Match?.Path;
+                if (!string.IsNullOrEmpty(path))
+                    RoutePatternFactory.Parse(path); // throws RoutePatternException if invalid
+
+                routes.Add(MapRoute(wrapper.Config));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(
+                    "Route '{RouteId}' skipped — invalid configuration: {Message}. " +
+                    "Delete or fix it via the dashboard.",
+                    wrapper.RouteId, ex.Message);
+            }
+        }
 
         var clusters = _liteDbService.Database
             .GetCollection<ClusterConfigWrapper>("clusters")
@@ -198,7 +249,7 @@ public class LiteDbProxyConfigProvider : IProxyConfigProvider
     }
 }
 
-public class LiteDbProxyConfig : IProxyConfig
+public class LiteDbProxyConfig : IProxyConfig, IDisposable
 {
     private readonly CancellationTokenSource _cts = new();
 
@@ -214,4 +265,6 @@ public class LiteDbProxyConfig : IProxyConfig
     public IChangeToken ChangeToken { get; }
 
     internal void SignalChange() => _cts.Cancel();
+
+    public void Dispose() => _cts.Dispose();
 }

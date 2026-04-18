@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -22,7 +22,8 @@ import { CommonModule } from '@angular/common';
     MatSnackBarModule
   ],
   templateUrl: './login.html',
-  styleUrls: ['./login.css']
+  styleUrls: ['./login.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LoginComponent {
   fb = inject(FormBuilder);
@@ -38,10 +39,14 @@ export class LoginComponent {
   onSubmit() {
     if (this.loginForm.valid) {
       this.authService.login(this.loginForm.value).subscribe({
-        next: () => {
-          this.router.navigate(['/dashboard']);
+        next: (res) => {
+          if (res.mustChangePassword) {
+            this.router.navigate(['/change-password']);
+          } else {
+            this.router.navigate(['/dashboard']);
+          }
         },
-        error: (err) => {
+        error: () => {
           this.snackBar.open('Login failed. Check credentials.', 'Close', { duration: 3000 });
         }
       });

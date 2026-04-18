@@ -160,4 +160,29 @@ export class ProxyConfigService {
       clusters: this.getClusters(),
     });
   }
+
+  backup(): Observable<Blob> {
+    return this.http.get(`${this.base}/backup`, { responseType: 'blob' });
+  }
+
+  restore(payload: { routes: RouteConfig[]; clusters: ClusterConfig[] }): Observable<any> {
+    return this.http.post(`${this.base}/restore`, payload);
+  }
+
+  getHistory(limit = 100, offset = 0): Observable<{ data: ConfigHistoryEntry[]; total: number }> {
+    return this.http.get<{ data: ConfigHistoryEntry[]; total: number }>(
+      `${this.base}/history?limit=${limit}&offset=${offset}`
+    );
+  }
+}
+
+export interface ConfigHistoryEntry {
+  id: string;
+  entityType: string;
+  entityId: string;
+  action: string;
+  changedBy: string;
+  changedAt: string;
+  oldValueJson: string | null;
+  newValueJson: string | null;
 }

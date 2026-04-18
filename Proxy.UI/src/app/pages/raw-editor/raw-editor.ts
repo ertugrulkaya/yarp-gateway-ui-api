@@ -1,5 +1,5 @@
 // Proxy.UI/src/app/pages/raw-editor/raw-editor.ts
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -19,6 +19,7 @@ import { ProxyConfigService } from '../../services/proxy-config';
   ],
   templateUrl: './raw-editor.html',
   styleUrls: ['./raw-editor.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RawEditorComponent implements OnInit {
   private proxyService = inject(ProxyConfigService);
@@ -51,6 +52,46 @@ export class RawEditorComponent implements OnInit {
     } catch (e: any) {
       this.snackBar.open('Invalid JSON: ' + e.message, 'Close', { duration: 5000 });
     }
+  }
+
+  // ── Backup / Restore ───────────────────────────────────────────────────────
+
+  exportBackup() {
+    this.proxyService.backup().subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `proxy-config-${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      },
+      error: () => this.snackBar.open('Export failed.', 'Close', { duration: 3000 }),
+    });
+  }
+
+  importFromFile(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const payload = JSON.parse(reader.result as string);
+        if (!Array.isArray(payload.routes) || !Array.isArray(payload.clusters))
+          throw new Error('File must contain "routes" and "clusters" arrays.');
+        this.proxyService.restore(payload).subscribe({
+          next: (res: any) => {
+            this.snackBar.open(res?.message ?? 'Restore successful.', 'Close', { duration: 4000 });
+            this.ngOnInit();
+          },
+          error: (err) => this.snackBar.open(err?.error?.message ?? 'Restore failed.', 'Close', { duration: 4000 }),
+        });
+      } catch (e: any) {
+        this.snackBar.open('Invalid file: ' + e.message, 'Close', { duration: 5000 });
+      }
+    };
+    reader.readAsText(file);
+    (event.target as HTMLInputElement).value = '';
   }
 
   // ── YARP appsettings import ────────────────────────────────────────────────

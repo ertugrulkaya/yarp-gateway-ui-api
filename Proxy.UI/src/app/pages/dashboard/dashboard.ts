@@ -1,5 +1,8 @@
 // Proxy.UI/src/app/pages/dashboard/dashboard.ts
-import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef } from '@angular/core';
+import {
+  Component, OnInit, OnDestroy, inject,
+  signal, computed, ChangeDetectionStrategy
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatTableModule } from '@angular/material/table';
 import { MatCardModule } from '@angular/material/card';
@@ -15,6 +18,7 @@ import { RouteDialogComponent } from './dialogs/route-dialog';
 import { ClusterDialogComponent } from './dialogs/cluster-dialog';
 import { RawEditDialogComponent } from './dialogs/raw-edit-dialog';
 import { ServiceWizardDialogComponent } from './dialogs/service-wizard-dialog';
+import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dialog';
 
 @Component({
   selector: 'app-dashboard',
@@ -30,20 +34,26 @@ import { ServiceWizardDialogComponent } from './dialogs/service-wizard-dialog';
   ],
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DashboardComponent implements OnInit, OnDestroy {
-  proxyService = inject(ProxyConfigService);
-  dialog = inject(MatDialog);
-  snackBar = inject(MatSnackBar);
-  router = inject(Router);
-  private cdr = inject(ChangeDetectorRef);
+  private proxyService = inject(ProxyConfigService);
+  private dialog = inject(MatDialog);
+  private snackBar = inject(MatSnackBar);
+  private router = inject(Router);
 
   private routerSub?: Subscription;
 
-  routes: RouteConfig[] = [];
-  clusters: ClusterConfig[] = [];
-  routesColumns = ['RouteId', 'ClusterId', 'Match', 'Actions'];
-  clustersColumns = ['ClusterId', 'Destinations', 'Actions'];
+  // ── State signals ───────────────────────────────────────────────────────────
+  readonly routes = signal<RouteConfig[]>([]);
+  readonly clusters = signal<ClusterConfig[]>([]);
+  readonly isSaving = signal(false);
+
+  // Derived: cluster ID list for route dialog dropdown
+  readonly clusterRefs = computed(() => this.clusters().map(c => ({ clusterId: c.clusterId })));
+
+  readonly routesColumns = ['RouteId', 'ClusterId', 'Match', 'Actions'];
+  readonly clustersColumns = ['ClusterId', 'Destinations', 'Actions'];
 
   ngOnInit() {
     this.loadConfig();
@@ -52,169 +62,175 @@ export class DashboardComponent implements OnInit, OnDestroy {
     ).subscribe(() => this.loadConfig());
   }
 
-  ngOnDestroy() {
-    this.routerSub?.unsubscribe();
-  }
+  ngOnDestroy() { this.routerSub?.unsubscribe(); }
 
   loadConfig() {
     this.proxyService.loadAll().subscribe({
       next: ({ routes, clusters }) => {
-        this.routes = routes;
-        this.clusters = clusters;
-        this.cdr.markForCheck();
+        this.routes.set(routes);
+        this.clusters.set(clusters);
       },
       error: () => this.snackBar.open('Error loading configuration.', 'Close', { duration: 3000 }),
     });
   }
 
-  // ── Service Wizard (bulk /raw) ─────────────────────────────────────────────
+  // ── Service Wizard ─────────────────────────────────────────────────────────
 
   openServiceWizard() {
-    const dialogRef = this.dialog.open(ServiceWizardDialogComponent, {
+    if (this.isSaving()) return;
+    const ref = this.dialog.open(ServiceWizardDialogComponent, {
       width: '600px',
-      data: { existingClusters: this.clusters },
+      data: { existingClusters: this.clusters() },
     });
-    dialogRef.afterClosed().subscribe((result: { routes: RouteConfig[]; cluster: ClusterConfig } | undefined) => {
+    ref.afterClosed().subscribe((result: { routes: RouteConfig[]; cluster: ClusterConfig } | undefined) => {
       if (!result) return;
       const payload = {
-        routes: [...this.routes, ...result.routes],
-        clusters: [...this.clusters, result.cluster],
+        routes: [...this.routes(), ...result.routes],
+        clusters: [...this.clusters(), result.cluster],
       };
+      this.isSaving.set(true);
       this.proxyService.updateRawConfig(payload).subscribe({
-        next: () => {
-          this.snackBar.open('Service added!', 'Close', { duration: 3000 });
-          this.loadConfig();
-        },
+        next: () => { this.snackBar.open('Service added!', 'Close', { duration: 3000 }); this.loadConfig(); },
         error: () => this.snackBar.open('Error saving configuration.', 'Close', { duration: 3000 }),
-      });
+      }).add(() => this.isSaving.set(false));
     });
   }
 
   // ── Route CRUD ─────────────────────────────────────────────────────────────
 
   addRoute() {
-    const dialogRef = this.dialog.open(RouteDialogComponent, {
+    if (this.isSaving()) return;
+    const ref = this.dialog.open(RouteDialogComponent, {
       width: '750px',
-      data: { clusters: this.clusters, existingRoutes: this.routes },
+      data: { clusters: this.clusterRefs(), existingRoutes: this.routes() },
     });
-    dialogRef.afterClosed().subscribe((result: RouteConfig | undefined) => {
+    ref.afterClosed().subscribe((result: RouteConfig | undefined) => {
       if (!result) return;
+      this.isSaving.set(true);
       this.proxyService.addRoute(result).subscribe({
-        next: () => {
-          this.snackBar.open('Route added.', 'Close', { duration: 3000 });
-          this.loadConfig();
-        },
-        error: (err) => this.snackBar.open(err?.error || 'Error adding route.', 'Close', { duration: 4000 }),
-      });
+        next: () => { this.snackBar.open('Route added.', 'Close', { duration: 3000 }); this.loadConfig(); },
+        error: (err) => this.snackBar.open(err?.error?.message || 'Error adding route.', 'Close', { duration: 4000 }),
+      }).add(() => this.isSaving.set(false));
     });
   }
 
   editRoute(route: RouteConfig) {
-    const dialogRef = this.dialog.open(RouteDialogComponent, {
+    if (this.isSaving()) return;
+    const ref = this.dialog.open(RouteDialogComponent, {
       width: '750px',
-      data: { route, clusters: this.clusters, existingRoutes: this.routes },
+      data: { route, clusters: this.clusterRefs(), existingRoutes: this.routes() },
     });
-    dialogRef.afterClosed().subscribe((result: RouteConfig | undefined) => {
+    ref.afterClosed().subscribe((result: RouteConfig | undefined) => {
       if (!result) return;
+      this.isSaving.set(true);
       this.proxyService.updateRoute(route.routeId, result).subscribe({
-        next: () => {
-          this.snackBar.open('Route updated.', 'Close', { duration: 3000 });
-          this.loadConfig();
-        },
-        error: (err) => this.snackBar.open(err?.error || 'Error updating route.', 'Close', { duration: 4000 }),
-      });
+        next: () => { this.snackBar.open('Route updated.', 'Close', { duration: 3000 }); this.loadConfig(); },
+        error: (err) => this.snackBar.open(err?.error?.message || 'Error updating route.', 'Close', { duration: 4000 }),
+      }).add(() => this.isSaving.set(false));
     });
   }
 
   deleteRoute(route: RouteConfig) {
-    if (!confirm(`Delete route "${route.routeId}"?`)) return;
-    this.proxyService.deleteRoute(route.routeId).subscribe({
-      next: () => {
-        this.snackBar.open('Route deleted.', 'Close', { duration: 3000 });
-        this.routes = this.routes.filter(r => r.routeId !== route.routeId);
-      },
-      error: (err) => this.snackBar.open(err?.error || 'Error deleting route.', 'Close', { duration: 4000 }),
+    if (this.isSaving()) return;
+    const ref = this.dialog.open(ConfirmDialogComponent, {
+      width: '380px',
+      data: { title: 'Delete Route', message: `Delete route "${route.routeId}"?`, confirmLabel: 'Delete' },
+    });
+    ref.afterClosed().subscribe((confirmed: boolean) => {
+      if (!confirmed) return;
+      this.isSaving.set(true);
+      this.proxyService.deleteRoute(route.routeId).subscribe({
+        next: () => {
+          this.snackBar.open('Route deleted.', 'Close', { duration: 3000 });
+          this.routes.update(rs => rs.filter(r => r.routeId !== route.routeId));
+        },
+        error: (err) => this.snackBar.open(err?.error?.message || 'Error deleting route.', 'Close', { duration: 4000 }),
+      }).add(() => this.isSaving.set(false));
     });
   }
 
   rawEditRoute(route: RouteConfig) {
-    const dialogRef = this.dialog.open(RawEditDialogComponent, {
+    if (this.isSaving()) return;
+    const ref = this.dialog.open(RawEditDialogComponent, {
       width: '600px',
       data: { item: route, label: route.routeId },
     });
-    dialogRef.afterClosed().subscribe((result: RouteConfig | undefined) => {
+    ref.afterClosed().subscribe((result: RouteConfig | undefined) => {
       if (!result) return;
+      this.isSaving.set(true);
       this.proxyService.updateRoute(route.routeId, result).subscribe({
-        next: () => {
-          this.snackBar.open('Route updated.', 'Close', { duration: 3000 });
-          this.loadConfig();
-        },
-        error: (err) => this.snackBar.open(err?.error || 'Error updating route.', 'Close', { duration: 4000 }),
-      });
+        next: () => { this.snackBar.open('Route updated.', 'Close', { duration: 3000 }); this.loadConfig(); },
+        error: (err) => this.snackBar.open(err?.error?.message || 'Error updating route.', 'Close', { duration: 4000 }),
+      }).add(() => this.isSaving.set(false));
     });
   }
 
   // ── Cluster CRUD ───────────────────────────────────────────────────────────
 
   addCluster() {
-    const dialogRef = this.dialog.open(ClusterDialogComponent, {
+    if (this.isSaving()) return;
+    const ref = this.dialog.open(ClusterDialogComponent, {
       width: '750px',
-      data: { existingClusters: this.clusters },
+      data: { existingClusters: this.clusters() },
     });
-    dialogRef.afterClosed().subscribe((result: ClusterConfig | undefined) => {
+    ref.afterClosed().subscribe((result: ClusterConfig | undefined) => {
       if (!result) return;
+      this.isSaving.set(true);
       this.proxyService.addCluster(result).subscribe({
-        next: () => {
-          this.snackBar.open('Cluster added.', 'Close', { duration: 3000 });
-          this.loadConfig();
-        },
-        error: (err) => this.snackBar.open(err?.error || 'Error adding cluster.', 'Close', { duration: 4000 }),
-      });
+        next: () => { this.snackBar.open('Cluster added.', 'Close', { duration: 3000 }); this.loadConfig(); },
+        error: (err) => this.snackBar.open(err?.error?.message || 'Error adding cluster.', 'Close', { duration: 4000 }),
+      }).add(() => this.isSaving.set(false));
     });
   }
 
   editCluster(cluster: ClusterConfig) {
-    const dialogRef = this.dialog.open(ClusterDialogComponent, {
+    if (this.isSaving()) return;
+    const ref = this.dialog.open(ClusterDialogComponent, {
       width: '750px',
-      data: { cluster, existingClusters: this.clusters },
+      data: { cluster, existingClusters: this.clusters() },
     });
-    dialogRef.afterClosed().subscribe((result: ClusterConfig | undefined) => {
+    ref.afterClosed().subscribe((result: ClusterConfig | undefined) => {
       if (!result) return;
+      this.isSaving.set(true);
       this.proxyService.updateCluster(cluster.clusterId, result).subscribe({
-        next: () => {
-          this.snackBar.open('Cluster updated.', 'Close', { duration: 3000 });
-          this.loadConfig();
-        },
-        error: (err) => this.snackBar.open(err?.error || 'Error updating cluster.', 'Close', { duration: 4000 }),
-      });
+        next: () => { this.snackBar.open('Cluster updated.', 'Close', { duration: 3000 }); this.loadConfig(); },
+        error: (err) => this.snackBar.open(err?.error?.message || 'Error updating cluster.', 'Close', { duration: 4000 }),
+      }).add(() => this.isSaving.set(false));
     });
   }
 
   deleteCluster(cluster: ClusterConfig) {
-    if (!confirm(`Delete cluster "${cluster.clusterId}"?`)) return;
-    this.proxyService.deleteCluster(cluster.clusterId).subscribe({
-      next: () => {
-        this.snackBar.open('Cluster deleted.', 'Close', { duration: 3000 });
-        this.clusters = this.clusters.filter(c => c.clusterId !== cluster.clusterId);
-      },
-      error: (err) => this.snackBar.open(err?.error || 'Error deleting cluster.', 'Close', { duration: 4000 }),
+    if (this.isSaving()) return;
+    const ref = this.dialog.open(ConfirmDialogComponent, {
+      width: '380px',
+      data: { title: 'Delete Cluster', message: `Delete cluster "${cluster.clusterId}"?`, confirmLabel: 'Delete' },
+    });
+    ref.afterClosed().subscribe((confirmed: boolean) => {
+      if (!confirmed) return;
+      this.isSaving.set(true);
+      this.proxyService.deleteCluster(cluster.clusterId).subscribe({
+        next: () => {
+          this.snackBar.open('Cluster deleted.', 'Close', { duration: 3000 });
+          this.clusters.update(cs => cs.filter(c => c.clusterId !== cluster.clusterId));
+        },
+        error: (err) => this.snackBar.open(err?.error?.message || 'Error deleting cluster.', 'Close', { duration: 4000 }),
+      }).add(() => this.isSaving.set(false));
     });
   }
 
   rawEditCluster(cluster: ClusterConfig) {
-    const dialogRef = this.dialog.open(RawEditDialogComponent, {
+    if (this.isSaving()) return;
+    const ref = this.dialog.open(RawEditDialogComponent, {
       width: '600px',
       data: { item: cluster, label: cluster.clusterId },
     });
-    dialogRef.afterClosed().subscribe((result: ClusterConfig | undefined) => {
+    ref.afterClosed().subscribe((result: ClusterConfig | undefined) => {
       if (!result) return;
+      this.isSaving.set(true);
       this.proxyService.updateCluster(cluster.clusterId, result).subscribe({
-        next: () => {
-          this.snackBar.open('Cluster updated.', 'Close', { duration: 3000 });
-          this.loadConfig();
-        },
-        error: (err) => this.snackBar.open(err?.error || 'Error updating cluster.', 'Close', { duration: 4000 }),
-      });
+        next: () => { this.snackBar.open('Cluster updated.', 'Close', { duration: 3000 }); this.loadConfig(); },
+        error: (err) => this.snackBar.open(err?.error?.message || 'Error updating cluster.', 'Close', { duration: 4000 }),
+      }).add(() => this.isSaving.set(false));
     });
   }
 }

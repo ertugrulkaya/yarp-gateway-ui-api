@@ -4,17 +4,17 @@
       <div class="card-header-actions">
         <mat-card-title>Proxy Routes</mat-card-title>
         <div style="display:flex; gap: 8px;">
-          <button mat-stroked-button color="primary" (click)="openServiceWizard()" matTooltip="Auto-generate all routes for a service">
+          <button mat-stroked-button color="primary" (click)="openServiceWizard()" [disabled]="isSaving()" matTooltip="Auto-generate all routes for a service">
             <mat-icon>auto_awesome</mat-icon> Add Service
           </button>
-          <button mat-raised-button color="primary" (click)="addRoute()">
+          <button mat-raised-button color="primary" (click)="addRoute()" [disabled]="isSaving()">
             <mat-icon>add</mat-icon> Add Route
           </button>
         </div>
       </div>
     </mat-card-header>
     <mat-card-content>
-      <table mat-table [dataSource]="routes" class="mat-elevation-z8" style="width: 100%; margin-top: 15px;">
+      <table mat-table [dataSource]="routes()" class="mat-elevation-z8" style="width: 100%; margin-top: 15px;">
         <ng-container matColumnDef="RouteId">
           <th mat-header-cell *matHeaderCellDef>Route ID</th>
           <td mat-cell *matCellDef="let element">{{element.routeId}}</td>
@@ -32,13 +32,13 @@
           <th mat-header-cell *matHeaderCellDef>Actions</th>
           <td mat-cell *matCellDef="let element">
             <div class="actions-cell">
-              <button mat-icon-button color="primary" (click)="editRoute(element)" matTooltip="Edit Route">
+              <button mat-icon-button color="primary" (click)="editRoute(element)" [disabled]="isSaving()" matTooltip="Edit Route">
                 <mat-icon>edit</mat-icon>
               </button>
-              <button mat-icon-button (click)="rawEditRoute(element)" matTooltip="Edit as Raw JSON" style="color: #9c27b0;">
+              <button mat-icon-button (click)="rawEditRoute(element)" [disabled]="isSaving()" matTooltip="Edit as Raw JSON" style="color: #9c27b0;">
                 <mat-icon>data_object</mat-icon>
               </button>
-              <button mat-icon-button color="warn" (click)="deleteRoute(element)" matTooltip="Delete Route">
+              <button mat-icon-button color="warn" (click)="deleteRoute(element)" [disabled]="isSaving()" matTooltip="Delete Route">
                 <mat-icon>delete</mat-icon>
               </button>
             </div>
@@ -58,13 +58,13 @@
     <mat-card-header>
       <div class="card-header-actions">
         <mat-card-title>Proxy Clusters</mat-card-title>
-        <button mat-raised-button color="primary" (click)="addCluster()">
+        <button mat-raised-button color="primary" (click)="addCluster()" [disabled]="isSaving()">
           <mat-icon>add</mat-icon> Add Cluster
         </button>
       </div>
     </mat-card-header>
     <mat-card-content>
-      <table mat-table [dataSource]="clusters" class="mat-elevation-z8" style="width: 100%; margin-top: 15px;">
+      <table mat-table [dataSource]="clusters()" class="mat-elevation-z8" style="width: 100%; margin-top: 15px;">
         <ng-container matColumnDef="ClusterId">
           <th mat-header-cell *matHeaderCellDef>Cluster ID</th>
           <td mat-cell *matCellDef="let element">{{element.clusterId}}</td>
@@ -88,13 +88,13 @@
           <th mat-header-cell *matHeaderCellDef>Actions</th>
           <td mat-cell *matCellDef="let element">
             <div class="actions-cell">
-              <button mat-icon-button color="primary" (click)="editCluster(element)" matTooltip="Edit Cluster">
+              <button mat-icon-button color="primary" (click)="editCluster(element)" [disabled]="isSaving()" matTooltip="Edit Cluster">
                 <mat-icon>edit</mat-icon>
               </button>
-              <button mat-icon-button (click)="rawEditCluster(element)" matTooltip="Edit as Raw JSON" style="color: #9c27b0;">
+              <button mat-icon-button (click)="rawEditCluster(element)" [disabled]="isSaving()" matTooltip="Edit as Raw JSON" style="color: #9c27b0;">
                 <mat-icon>data_object</mat-icon>
               </button>
-              <button mat-icon-button color="warn" (click)="deleteCluster(element)" matTooltip="Delete Cluster">
+              <button mat-icon-button color="warn" (click)="deleteCluster(element)" [disabled]="isSaving()" matTooltip="Delete Cluster">
                 <mat-icon>delete</mat-icon>
               </button>
             </div>

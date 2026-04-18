@@ -8,7 +8,6 @@ export interface LogEntry {
   clientIp: string;
   method: string;
   path: string;
-  queryString: string;
   clusterId: string;
   destinationAddress: string;
   statusCode: number;

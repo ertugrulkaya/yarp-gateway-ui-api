@@ -1,7 +1,7 @@
 import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { catchError, throwError } from 'rxjs';
+import { EMPTY, catchError, throwError } from 'rxjs';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const router = inject(Router);
@@ -15,7 +15,9 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     catchError((err: HttpErrorResponse) => {
       if (err.status === 401) {
         localStorage.removeItem('access_token');
+        localStorage.removeItem('must_change_password');
         router.navigate(['/login']);
+        return EMPTY; // swallow — prevents component error handlers from also firing
       }
       return throwError(() => err);
     })

@@ -11,6 +11,13 @@
           <mat-icon>{{ showImport ? 'close' : 'upload' }}</mat-icon>
           {{ showImport ? 'Cancel Import' : 'Import YARP Format' }}
         </button>
+        <button mat-stroked-button color="primary" (click)="exportBackup()" matTooltip="Download config as JSON backup">
+          <mat-icon>download</mat-icon> Export Backup
+        </button>
+        <label mat-stroked-button color="primary" class="file-import-label" matTooltip="Restore config from a backup file">
+          <mat-icon>restore</mat-icon> Restore from File
+          <input type="file" accept=".json" (change)="importFromFile($event)" hidden>
+        </label>
         <button mat-raised-button color="accent" (click)="saveConfig()">
           <mat-icon>save</mat-icon> Save & Apply
         </button>
