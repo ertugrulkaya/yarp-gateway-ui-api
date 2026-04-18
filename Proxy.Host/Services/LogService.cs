@@ -82,6 +82,14 @@ public class LogService : IDisposable
         return query.Count();
     }
 
+    public int CountErrors(DateTime since)
+    {
+        var collection = _db.GetCollection<LogEntry>(CollectionName);
+        return collection.Query()
+            .Where(x => x.Timestamp >= since && x.StatusCode >= 500)
+            .Count();
+    }
+
     public int ClearLogs()
     {
         var collection = _db.GetCollection<LogEntry>(CollectionName);

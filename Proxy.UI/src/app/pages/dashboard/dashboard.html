@@ -1,4 +1,43 @@
 <div class="card-container">
+
+  <!-- ── Summary Cards ─────────────────────────────────────────── -->
+  @if (summary()) {
+    <div class="summary-grid">
+      <div class="summary-card" matTooltip="Total configured routes">
+        <mat-icon class="summary-icon routes">alt_route</mat-icon>
+        <div class="summary-body">
+          <span class="summary-value">{{ summary()!.routes }}</span>
+          <span class="summary-label">Routes</span>
+        </div>
+      </div>
+
+      <div class="summary-card" matTooltip="Total configured clusters">
+        <mat-icon class="summary-icon clusters">hub</mat-icon>
+        <div class="summary-body">
+          <span class="summary-value">{{ summary()!.clusters }}</span>
+          <span class="summary-label">Clusters</span>
+        </div>
+      </div>
+
+      <div class="summary-card" matTooltip="Total requests in log database" (click)="goToLogs()" style="cursor:pointer">
+        <mat-icon class="summary-icon requests">receipt_long</mat-icon>
+        <div class="summary-body">
+          <span class="summary-value">{{ summary()!.requestsTotal | number }}</span>
+          <span class="summary-label">Total Requests</span>
+        </div>
+      </div>
+
+      <div class="summary-card" [class.summary-card--error]="summary()!.errorsLast24h > 0"
+           matTooltip="5xx errors in the last 24 hours" (click)="goToLogs()" style="cursor:pointer">
+        <mat-icon class="summary-icon errors">error_outline</mat-icon>
+        <div class="summary-body">
+          <span class="summary-value">{{ summary()!.errorsLast24h | number }}</span>
+          <span class="summary-label">Errors (24h)</span>
+        </div>
+      </div>
+    </div>
+  }
+
   <mat-card>
     <mat-card-header>
       <div class="card-header-actions">

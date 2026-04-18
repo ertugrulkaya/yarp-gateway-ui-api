@@ -17,12 +17,14 @@ public class ProxyConfigController : ControllerBase
     private readonly LiteDbService _db;
     private readonly LiteDbProxyConfigProvider _provider;
     private readonly IConfigValidator _validator;
+    private readonly LogService _logService;
 
-    public ProxyConfigController(LiteDbService db, LiteDbProxyConfigProvider provider, IConfigValidator validator)
+    public ProxyConfigController(LiteDbService db, LiteDbProxyConfigProvider provider, IConfigValidator validator, LogService logService)
     {
         _db = db;
         _provider = provider;
         _validator = validator;
+        _logService = logService;
     }
 
     private async Task<IActionResult?> ValidateRouteAsync(RouteDto dto)
@@ -349,5 +351,18 @@ public class ProxyConfigController : ControllerBase
         }
         catch { db.Rollback(); throw; }
         return Ok(new { data = items, total });
+    }
+
+    // ── Summary ───────────────────────────────────────────────────────────────
+
+    [HttpGet("summary")]
+    public IActionResult GetSummary()
+    {
+        var routes   = _db.Database.GetCollection<RouteConfigWrapper>("routes").Count();
+        var clusters = _db.Database.GetCollection<ClusterConfigWrapper>("clusters").Count();
+        var since    = DateTime.UtcNow.AddHours(-24);
+        var requests = _logService.GetTotalCount();
+        var errors   = _logService.CountErrors(since);
+        return Ok(new { routes, clusters, requestsTotal = requests, errorsLast24h = errors });
     }
 }

@@ -174,6 +174,17 @@ export class ProxyConfigService {
       `${this.base}/history?limit=${limit}&offset=${offset}`
     );
   }
+
+  getSummary(): Observable<DashboardSummary> {
+    return this.http.get<DashboardSummary>(`${this.base}/summary`);
+  }
+}
+
+export interface DashboardSummary {
+  routes: number;
+  clusters: number;
+  requestsTotal: number;
+  errorsLast24h: number;
 }
 
 export interface ConfigHistoryEntry {

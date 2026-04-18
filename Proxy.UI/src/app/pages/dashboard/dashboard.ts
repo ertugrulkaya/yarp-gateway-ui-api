@@ -10,10 +10,11 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router, NavigationEnd } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
-import { ProxyConfigService, RouteConfig, ClusterConfig } from '../../services/proxy-config';
+import { ProxyConfigService, RouteConfig, ClusterConfig, DashboardSummary } from '../../services/proxy-config';
 import { RouteDialogComponent } from './dialogs/route-dialog';
 import { ClusterDialogComponent } from './dialogs/cluster-dialog';
 import { RawEditDialogComponent } from './dialogs/raw-edit-dialog';
@@ -31,6 +32,7 @@ import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dial
     MatIconModule,
     MatDialogModule,
     MatSnackBarModule,
+    MatTooltipModule,
   ],
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.css'],
@@ -50,6 +52,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   readonly isSaving = signal(false);
   readonly isLoading = signal(false);
   readonly skeletonRows = Array(4).fill(0);
+  readonly summary = signal<DashboardSummary | null>(null);
 
   // Derived: cluster ID list for route dialog dropdown
   readonly clusterRefs = computed(() => this.clusters().map(c => ({ clusterId: c.clusterId })));
@@ -59,12 +62,22 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.loadConfig();
+    this.loadSummary();
     this.routerSub = this.router.events.pipe(
       filter(e => e instanceof NavigationEnd && e.urlAfterRedirects.includes('/dashboard'))
-    ).subscribe(() => this.loadConfig());
+    ).subscribe(() => { this.loadConfig(); this.loadSummary(); });
   }
 
   ngOnDestroy() { this.routerSub?.unsubscribe(); }
+
+  goToLogs() { this.router.navigate(['/logs']); }
+
+  loadSummary() {
+    this.proxyService.getSummary().subscribe({
+      next: (s) => this.summary.set(s),
+      error: () => { /* summary is non-critical, silently ignore */ },
+    });
+  }
 
   loadConfig() {
     this.isLoading.set(true);
