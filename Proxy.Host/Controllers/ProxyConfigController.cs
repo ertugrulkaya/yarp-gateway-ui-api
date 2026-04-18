@@ -179,7 +179,7 @@ public class ProxyConfigController : ControllerBase
 
         col.Insert(new RouteConfigWrapper { RouteId = route.RouteId, Config = route });
         RecordHistory("route", route.RouteId, "create", null, route);
-        _provider.UpdateConfig();
+        _provider.UpdateConfig("route", route.RouteId);
         return Ok(new { Message = "Route added." });
     }
 
@@ -203,7 +203,7 @@ public class ProxyConfigController : ControllerBase
 
         col.Upsert(new RouteConfigWrapper { RouteId = routeId, Config = route });
         RecordHistory("route", routeId, "update", oldRoute, route);
-        _provider.UpdateConfig();
+        _provider.UpdateConfig("route", routeId);
         return Ok(new { Message = "Route updated." });
     }
 
@@ -217,7 +217,7 @@ public class ProxyConfigController : ControllerBase
 
         col.Delete(routeId);
         RecordHistory("route", routeId, "delete", existing.Config, null);
-        _provider.UpdateConfig();
+        _provider.UpdateConfig("route", routeId, deleted: true);
         return Ok(new { Message = "Route deleted." });
     }
 
@@ -244,7 +244,7 @@ public class ProxyConfigController : ControllerBase
 
         col.Insert(new ClusterConfigWrapper { ClusterId = cluster.ClusterId, Config = cluster });
         RecordHistory("cluster", cluster.ClusterId, "create", null, cluster);
-        _provider.UpdateConfig();
+        _provider.UpdateConfig("cluster", cluster.ClusterId);
         return Ok(new { Message = "Cluster added." });
     }
 
@@ -262,7 +262,7 @@ public class ProxyConfigController : ControllerBase
 
         col.Upsert(new ClusterConfigWrapper { ClusterId = clusterId, Config = cluster });
         RecordHistory("cluster", clusterId, "update", oldCluster.Config, cluster);
-        _provider.UpdateConfig();
+        _provider.UpdateConfig("cluster", clusterId);
         return Ok(new { Message = "Cluster updated." });
     }
 
@@ -276,7 +276,7 @@ public class ProxyConfigController : ControllerBase
 
         col.Delete(clusterId);
         RecordHistory("cluster", clusterId, "delete", existing.Config, null);
-        _provider.UpdateConfig();
+        _provider.UpdateConfig("cluster", clusterId, deleted: true);
         return Ok(new { Message = "Cluster deleted." });
     }
 

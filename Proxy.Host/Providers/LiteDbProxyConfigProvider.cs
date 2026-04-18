@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Routing.Patterns;
 using Microsoft.Extensions.Primitives;
 using Proxy.Host.Models;
 using Proxy.Host.Services;
+using System.Collections.Concurrent;
 using System.Net.Http;
 using Yarp.ReverseProxy.Configuration;
 using Yarp.ReverseProxy.Forwarder;
@@ -17,6 +18,13 @@ public class LiteDbProxyConfigProvider : IProxyConfigProvider, IDisposable
     private readonly ReaderWriterLockSlim _lock = new();
     private LiteDbProxyConfig _config;
     private bool _disposed;
+
+    // ── Caches ────────────────────────────────────────────────────────────────
+    // Path parse cache: avoids re-running RoutePatternFactory.Parse on every reload
+    private readonly ConcurrentDictionary<string, bool> _pathValidCache = new();
+    // Entity caches: avoids re-mapping unchanged routes/clusters
+    private readonly ConcurrentDictionary<string, RouteConfig>  _routeCache   = new();
+    private readonly ConcurrentDictionary<string, ClusterConfig> _clusterCache = new();
 
     public LiteDbProxyConfigProvider(LiteDbService liteDbService, ILogger<LiteDbProxyConfigProvider> logger)
     {
@@ -32,10 +40,74 @@ public class LiteDbProxyConfigProvider : IProxyConfigProvider, IDisposable
         finally { _lock.ExitReadLock(); }
     }
 
+    /// <summary>Full reload — used when multiple entities may have changed (bulk, restore).</summary>
     public void UpdateConfig()
     {
         var newConfig = LoadFromDb();
+        SwapConfig(newConfig);
+    }
 
+    /// <summary>
+    /// Targeted reload — only reloads the single changed route or cluster from DB,
+    /// leaving all other cached entries intact. Call after single-entity CRUD.
+    /// </summary>
+    public void UpdateConfig(string entityType, string entityId, bool deleted = false)
+    {
+        if (deleted)
+        {
+            if (entityType == "route")
+            {
+                _routeCache.TryRemove(entityId, out _);
+                // Also remove path cache entry for this route
+                var wrapper = _liteDbService.Database
+                    .GetCollection<RouteConfigWrapper>("routes").FindById(entityId);
+                if (wrapper?.Config.Match?.Path is { } p) _pathValidCache.TryRemove(p, out _);
+            }
+            else
+            {
+                _clusterCache.TryRemove(entityId, out _);
+            }
+        }
+        else
+        {
+            // Re-map only the changed entity
+            if (entityType == "route")
+            {
+                var wrapper = _liteDbService.Database
+                    .GetCollection<RouteConfigWrapper>("routes").FindById(entityId);
+                if (wrapper != null)
+                {
+                    var path = wrapper.Config.Match?.Path;
+                    if (!string.IsNullOrEmpty(path)) _pathValidCache.TryRemove(path, out _);
+                    try
+                    {
+                        var mapped = MapRoute(wrapper.Config);
+                        _routeCache[entityId] = mapped;
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning("Route '{RouteId}' skipped — {Message}", entityId, ex.Message);
+                        _routeCache.TryRemove(entityId, out _);
+                    }
+                }
+            }
+            else
+            {
+                var wrapper = _liteDbService.Database
+                    .GetCollection<ClusterConfigWrapper>("clusters").FindById(entityId);
+                if (wrapper != null)
+                    _clusterCache[entityId] = MapCluster(wrapper.Config);
+            }
+        }
+
+        // Rebuild config from caches
+        var routes   = _routeCache.Values.ToList();
+        var clusters = _clusterCache.Values.ToList();
+        SwapConfig(new LiteDbProxyConfig(routes, clusters));
+    }
+
+    private void SwapConfig(LiteDbProxyConfig newConfig)
+    {
         _lock.EnterWriteLock();
         LiteDbProxyConfig oldConfig;
         try
@@ -45,7 +117,6 @@ public class LiteDbProxyConfigProvider : IProxyConfigProvider, IDisposable
         }
         finally { _lock.ExitWriteLock(); }
 
-        // Signal YARP outside the lock — callbacks should not hold the lock
         oldConfig.SignalChange();
         oldConfig.Dispose();
     }
@@ -64,33 +135,69 @@ public class LiteDbProxyConfigProvider : IProxyConfigProvider, IDisposable
 
     private LiteDbProxyConfig LoadFromDb()
     {
-        var routes = new List<RouteConfig>();
+        // Track which IDs are still in the DB so we can evict stale cache entries
+        var dbRouteIds    = new HashSet<string>();
+        var dbClusterIds  = new HashSet<string>();
+
         foreach (var wrapper in _liteDbService.Database
             .GetCollection<RouteConfigWrapper>("routes").FindAll())
         {
+            dbRouteIds.Add(wrapper.RouteId);
+
+            // Skip if we already have a valid cached mapping for this route
+            if (_routeCache.ContainsKey(wrapper.RouteId))
+                continue;
+
             try
             {
-                // Eagerly validate the path so we never hand YARP an unparseable pattern
                 var path = wrapper.Config.Match?.Path;
                 if (!string.IsNullOrEmpty(path))
-                    RoutePatternFactory.Parse(path); // throws RoutePatternException if invalid
+                {
+                    // Check path validity cache first
+                    if (!_pathValidCache.TryGetValue(path, out var isValid))
+                    {
+                        try { RoutePatternFactory.Parse(path); isValid = true; }
+                        catch { isValid = false; }
+                        _pathValidCache[path] = isValid;
+                    }
 
-                routes.Add(MapRoute(wrapper.Config));
+                    if (!isValid)
+                    {
+                        _logger.LogWarning(
+                            "Route '{RouteId}' skipped — invalid path pattern: {Path}. " +
+                            "Delete or fix it via the dashboard.",
+                            wrapper.RouteId, path);
+                        continue;
+                    }
+                }
+
+                _routeCache[wrapper.RouteId] = MapRoute(wrapper.Config);
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(
-                    "Route '{RouteId}' skipped — invalid configuration: {Message}. " +
-                    "Delete or fix it via the dashboard.",
+                    "Route '{RouteId}' skipped — {Message}",
                     wrapper.RouteId, ex.Message);
             }
         }
 
-        var clusters = _liteDbService.Database
-            .GetCollection<ClusterConfigWrapper>("clusters")
-            .FindAll().Select(x => MapCluster(x.Config)).ToList();
+        foreach (var wrapper in _liteDbService.Database
+            .GetCollection<ClusterConfigWrapper>("clusters").FindAll())
+        {
+            dbClusterIds.Add(wrapper.ClusterId);
+            if (!_clusterCache.ContainsKey(wrapper.ClusterId))
+                _clusterCache[wrapper.ClusterId] = MapCluster(wrapper.Config);
+        }
 
-        return new LiteDbProxyConfig(routes, clusters);
+        // Evict deleted entries from caches
+        foreach (var key in _routeCache.Keys.Except(dbRouteIds).ToList())
+            _routeCache.TryRemove(key, out _);
+        foreach (var key in _clusterCache.Keys.Except(dbClusterIds).ToList())
+            _clusterCache.TryRemove(key, out _);
+
+        return new LiteDbProxyConfig(
+            _routeCache.Values.ToList(),
+            _clusterCache.Values.ToList());
     }
 
     private static TimeSpan? ParseTimeSpan(string? value) =>
