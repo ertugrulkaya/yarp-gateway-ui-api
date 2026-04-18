@@ -21,7 +21,7 @@ public class HistoryService
     public HistoryService(LiteDbService db) => _db = db;
 
     /// <summary>Non-blocking enqueue from the request path.</summary>
-    public void Enqueue(ConfigHistory entry) => _channel.Writer.TryWrite(entry);
+    public virtual void Enqueue(ConfigHistory entry) => _channel.Writer.TryWrite(entry);
 
     /// <summary>Called only by HistoryWriterService on its dedicated background thread.</summary>
     internal void WriteToDb(ConfigHistory entry)

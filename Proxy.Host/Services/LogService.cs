@@ -79,7 +79,7 @@ public class LogService : IDisposable
         };
     }
 
-    public long GetTotalCount(
+    public virtual long GetTotalCount(
         string? clusterId = null, int? statusCode = null,
         string? clientIp = null, string? method = null)
     {
@@ -96,7 +96,7 @@ public class LogService : IDisposable
         return query.Count();
     }
 
-    public int CountErrors(DateTime since)
+    public virtual int CountErrors(DateTime since)
     {
         var collection = _db.GetCollection<LogEntry>(CollectionName);
         return collection.Query()

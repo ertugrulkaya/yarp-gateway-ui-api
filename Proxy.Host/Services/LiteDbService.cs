@@ -15,7 +15,7 @@ public class LiteDbService : IHostedService
         _db = new LiteDatabase($"Filename={dbPath};Connection=shared");
     }
 
-    public LiteDatabase Database => _db;
+    public virtual LiteDatabase Database => _db;
 
     // IHostedService — seed runs after DI is fully built, not during constructor
     public Task StartAsync(CancellationToken cancellationToken)

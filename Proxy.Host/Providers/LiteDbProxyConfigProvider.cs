@@ -41,7 +41,7 @@ public class LiteDbProxyConfigProvider : IProxyConfigProvider, IDisposable
     }
 
     /// <summary>Full reload — used when multiple entities may have changed (bulk, restore).</summary>
-    public void UpdateConfig()
+    public virtual void UpdateConfig()
     {
         var newConfig = LoadFromDb();
         SwapConfig(newConfig);
@@ -51,7 +51,7 @@ public class LiteDbProxyConfigProvider : IProxyConfigProvider, IDisposable
     /// Targeted reload — only reloads the single changed route or cluster from DB,
     /// leaving all other cached entries intact. Call after single-entity CRUD.
     /// </summary>
-    public void UpdateConfig(string entityType, string entityId, bool deleted = false)
+    public virtual void UpdateConfig(string entityType, string entityId, bool deleted = false)
     {
         if (deleted)
         {

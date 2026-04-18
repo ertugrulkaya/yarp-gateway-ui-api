@@ -271,7 +271,7 @@
 
 ## 📋 SONRAKİ SPRINT
 
-### T4-9 · `RecordHistory()` Request Path'inden Çıkar — Async Channel
+### ✅ T4-9 · `RecordHistory()` Request Path'inden Çıkar — Async Channel
 - **Öncelik:** 🟠 Önemli
 - **Uzman:** 🔴 🟡
 - **Sorun:** `RecordHistory()` sync ve request path'inde. Her CRUD operasyonunda response dönmeden blocking DB write yapılıyor. Yüksek yükte latency artışına yol açar.
@@ -283,11 +283,11 @@
   - `HistoryWriterService.StopAsync()` → graceful drain (T4-2 ile aynı pattern)
   - `Program.cs` → `AddHostedService<HistoryWriterService>()` ekle
 - **Tahmini süre:** 2 saat
-- [ ] Tamamlandı
+- [x] Tamamlandı
 
 ---
 
-### T4-10 · `LoadFromDb()` Cache + `RoutePatternFactory.Parse()` Cache
+### ✅ T4-10 · `LoadFromDb()` Cache + `RoutePatternFactory.Parse()` Cache
 - **Öncelik:** 🟠 Önemli
 - **Uzman:** 🔴 🟡
 - **Sorun:**
@@ -302,7 +302,7 @@
   - Daha kapsamlı: `_routeCache` ve `_clusterCache` tutarak sadece değişen entity'leri reload et (dirty flag pattern)
   - Bunun için `UpdateConfig(string changedRouteId)` overload'u gerekebilir
 - **Tahmini süre:** 3-4 saat
-- [ ] Tamamlandı
+- [x] Tamamlandı
 
 ---
 
@@ -333,7 +333,7 @@
 
 ---
 
-### T4-12 · `MatSort` Kolon Sıralama — Route ve Log Tabloları
+### ✅ T4-12 · `MatSort` Kolon Sıralama — Route ve Log Tabloları
 - **Öncelik:** 🟠 Önemli
 - **Uzman:** 🟢
 - **Sorun:** Dashboard route/cluster tabloları ve log tablosunda kolon başlıklarına tıklanarak sıralama yapılamıyor. Temel UX beklentisi karşılanmıyor.
@@ -347,7 +347,7 @@
   - Dashboard için client-side sort (signals ile): `sortedRoutes = computed(() => [...routes()].sort(...))`
   - Log tablosu için server-side sort parametresi ekle: `?sortBy=timestamp&sortDir=desc`
 - **Tahmini süre:** 3 saat
-- [ ] Tamamlandı
+- [x] Tamamlandı
 
 ---
 

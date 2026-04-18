@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Proxy.Host.Models;
 using Proxy.Host.Providers;
+using Proxy.Host.Repositories;
 using Proxy.Host.Services;
 using System.Security.Claims;
 using System.Text.Json;
@@ -14,19 +15,30 @@ namespace Proxy.Host.Controllers;
 [Authorize]
 public class ProxyConfigController : ControllerBase
 {
-    private readonly LiteDbService _db;
+    private readonly IRouteRepository _routeRepository;
+    private readonly IClusterRepository _clusterRepository;
+    private readonly LiteDbService _db;              // bulk ops (UpdateRawConfig, Restore) + GetHistory
     private readonly LiteDbProxyConfigProvider _provider;
     private readonly IConfigValidator _validator;
     private readonly LogService _logService;
     private readonly HistoryService _historyService;
 
-    public ProxyConfigController(LiteDbService db, LiteDbProxyConfigProvider provider, IConfigValidator validator, LogService logService, HistoryService historyService)
+    public ProxyConfigController(
+        IRouteRepository routeRepository,
+        IClusterRepository clusterRepository,
+        LiteDbService db,
+        LiteDbProxyConfigProvider provider,
+        IConfigValidator validator,
+        LogService logService,
+        HistoryService historyService)
     {
-        _db = db;
-        _provider = provider;
-        _validator = validator;
-        _logService = logService;
-        _historyService = historyService;
+        _routeRepository    = routeRepository;
+        _clusterRepository  = clusterRepository;
+        _db                 = db;
+        _provider           = provider;
+        _validator          = validator;
+        _logService         = logService;
+        _historyService     = historyService;
     }
 
     private async Task<IActionResult?> ValidateRouteAsync(RouteDto dto)
@@ -87,11 +99,9 @@ public class ProxyConfigController : ControllerBase
     [HttpGet("raw")]
     public IActionResult GetRawConfig()
     {
-        var routes = _db.Database.GetCollection<RouteConfigWrapper>("routes")
-            .FindAll().Select(x => x.Config);
-        var clusters = _db.Database.GetCollection<ClusterConfigWrapper>("clusters")
-            .FindAll().Select(x => x.Config);
-        return Ok(new ProxyConfigPayload { Routes = routes.ToList(), Clusters = clusters.ToList() });
+        var routes   = _routeRepository.GetAll().ToList();
+        var clusters = _clusterRepository.GetAll().ToList();
+        return Ok(new ProxyConfigPayload { Routes = routes, Clusters = clusters });
     }
 
     [HttpPost("raw")]
@@ -127,7 +137,7 @@ public class ProxyConfigController : ControllerBase
         db.BeginTrans();
         try
         {
-            var routesCol = db.GetCollection<RouteConfigWrapper>("routes");
+            var routesCol   = db.GetCollection<RouteConfigWrapper>("routes");
             var clustersCol = db.GetCollection<ClusterConfigWrapper>("clusters");
 
             routesCol.DeleteAll();
@@ -155,9 +165,7 @@ public class ProxyConfigController : ControllerBase
     [HttpGet("routes")]
     public IActionResult GetRoutes()
     {
-        var routes = _db.Database.GetCollection<RouteConfigWrapper>("routes")
-            .FindAll().Select(x => x.Config).ToList();
-        return Ok(routes);
+        return Ok(_routeRepository.GetAll().ToList());
     }
 
     [HttpPost("routes")]
@@ -165,19 +173,17 @@ public class ProxyConfigController : ControllerBase
     {
         if (string.IsNullOrWhiteSpace(route.RouteId))
             return BadRequest(new ApiError("BAD_REQUEST", "RouteId is required."));
-        var col = _db.Database.GetCollection<RouteConfigWrapper>("routes");
-        if (col.FindById(route.RouteId) != null)
+
+        if (_routeRepository.ExistsById(route.RouteId))
             return Conflict(new ApiError("CONFLICT", $"Route '{route.RouteId}' already exists."));
-        if (!string.IsNullOrWhiteSpace(route.ClusterId))
-        {
-            var clusterExists = _db.Database.GetCollection<ClusterConfigWrapper>("clusters").FindById(route.ClusterId) != null;
-            if (!clusterExists)
-                return UnprocessableEntity(new ApiError("UNPROCESSABLE", $"Cluster '{route.ClusterId}' not found."));
-        }
+
+        if (!string.IsNullOrWhiteSpace(route.ClusterId) && !_clusterRepository.ExistsById(route.ClusterId))
+            return UnprocessableEntity(new ApiError("UNPROCESSABLE", $"Cluster '{route.ClusterId}' not found."));
+
         var validationError = await ValidateRouteAsync(route);
         if (validationError != null) return validationError;
 
-        col.Insert(new RouteConfigWrapper { RouteId = route.RouteId, Config = route });
+        _routeRepository.Insert(route);
         RecordHistory("route", route.RouteId, "create", null, route);
         _provider.UpdateConfig("route", route.RouteId);
         return Ok(new { Message = "Route added." });
@@ -186,23 +192,19 @@ public class ProxyConfigController : ControllerBase
     [HttpPut("routes/{routeId}")]
     public async Task<IActionResult> UpdateRoute(string routeId, [FromBody] RouteDto route)
     {
-        var col = _db.Database.GetCollection<RouteConfigWrapper>("routes");
-        if (col.FindById(routeId) == null)
+        var existing = _routeRepository.FindById(routeId);
+        if (existing == null)
             return NotFound(new ApiError("NOT_FOUND", $"Route '{routeId}' not found."));
 
-        var oldRoute = col.FindById(routeId)?.Config;
-        if (!string.IsNullOrWhiteSpace(route.ClusterId))
-        {
-            var clusterExists = _db.Database.GetCollection<ClusterConfigWrapper>("clusters").FindById(route.ClusterId) != null;
-            if (!clusterExists)
-                return UnprocessableEntity(new ApiError("UNPROCESSABLE", $"Cluster '{route.ClusterId}' not found."));
-        }
+        if (!string.IsNullOrWhiteSpace(route.ClusterId) && !_clusterRepository.ExistsById(route.ClusterId))
+            return UnprocessableEntity(new ApiError("UNPROCESSABLE", $"Cluster '{route.ClusterId}' not found."));
+
         route.RouteId = routeId;
         var validationError = await ValidateRouteAsync(route);
         if (validationError != null) return validationError;
 
-        col.Upsert(new RouteConfigWrapper { RouteId = routeId, Config = route });
-        RecordHistory("route", routeId, "update", oldRoute, route);
+        _routeRepository.Upsert(route);
+        RecordHistory("route", routeId, "update", existing, route);
         _provider.UpdateConfig("route", routeId);
         return Ok(new { Message = "Route updated." });
     }
@@ -210,13 +212,12 @@ public class ProxyConfigController : ControllerBase
     [HttpDelete("routes/{routeId}")]
     public IActionResult DeleteRoute(string routeId)
     {
-        var col = _db.Database.GetCollection<RouteConfigWrapper>("routes");
-        var existing = col.FindById(routeId);
+        var existing = _routeRepository.FindById(routeId);
         if (existing == null)
             return NotFound(new ApiError("NOT_FOUND", $"Route '{routeId}' not found."));
 
-        col.Delete(routeId);
-        RecordHistory("route", routeId, "delete", existing.Config, null);
+        _routeRepository.Delete(routeId);
+        RecordHistory("route", routeId, "delete", existing, null);
         _provider.UpdateConfig("route", routeId, deleted: true);
         return Ok(new { Message = "Route deleted." });
     }
@@ -226,9 +227,7 @@ public class ProxyConfigController : ControllerBase
     [HttpGet("clusters")]
     public IActionResult GetClusters()
     {
-        var clusters = _db.Database.GetCollection<ClusterConfigWrapper>("clusters")
-            .FindAll().Select(x => x.Config).ToList();
-        return Ok(clusters);
+        return Ok(_clusterRepository.GetAll().ToList());
     }
 
     [HttpPost("clusters")]
@@ -236,13 +235,14 @@ public class ProxyConfigController : ControllerBase
     {
         if (string.IsNullOrWhiteSpace(cluster.ClusterId))
             return BadRequest(new ApiError("BAD_REQUEST", "ClusterId is required."));
-        var col = _db.Database.GetCollection<ClusterConfigWrapper>("clusters");
-        if (col.FindById(cluster.ClusterId) != null)
+
+        if (_clusterRepository.ExistsById(cluster.ClusterId))
             return Conflict(new ApiError("CONFLICT", $"Cluster '{cluster.ClusterId}' already exists."));
+
         var validationError = await ValidateClusterAsync(cluster);
         if (validationError != null) return validationError;
 
-        col.Insert(new ClusterConfigWrapper { ClusterId = cluster.ClusterId, Config = cluster });
+        _clusterRepository.Insert(cluster);
         RecordHistory("cluster", cluster.ClusterId, "create", null, cluster);
         _provider.UpdateConfig("cluster", cluster.ClusterId);
         return Ok(new { Message = "Cluster added." });
@@ -251,17 +251,16 @@ public class ProxyConfigController : ControllerBase
     [HttpPut("clusters/{clusterId}")]
     public async Task<IActionResult> UpdateCluster(string clusterId, [FromBody] ClusterDto cluster)
     {
-        var col = _db.Database.GetCollection<ClusterConfigWrapper>("clusters");
-        var oldCluster = col.FindById(clusterId);
-        if (oldCluster == null)
+        var existing = _clusterRepository.FindById(clusterId);
+        if (existing == null)
             return NotFound(new ApiError("NOT_FOUND", $"Cluster '{clusterId}' not found."));
 
         cluster.ClusterId = clusterId;
         var validationError = await ValidateClusterAsync(cluster);
         if (validationError != null) return validationError;
 
-        col.Upsert(new ClusterConfigWrapper { ClusterId = clusterId, Config = cluster });
-        RecordHistory("cluster", clusterId, "update", oldCluster.Config, cluster);
+        _clusterRepository.Upsert(cluster);
+        RecordHistory("cluster", clusterId, "update", existing, cluster);
         _provider.UpdateConfig("cluster", clusterId);
         return Ok(new { Message = "Cluster updated." });
     }
@@ -269,13 +268,12 @@ public class ProxyConfigController : ControllerBase
     [HttpDelete("clusters/{clusterId}")]
     public IActionResult DeleteCluster(string clusterId)
     {
-        var col = _db.Database.GetCollection<ClusterConfigWrapper>("clusters");
-        var existing = col.FindById(clusterId);
+        var existing = _clusterRepository.FindById(clusterId);
         if (existing == null)
             return NotFound(new ApiError("NOT_FOUND", $"Cluster '{clusterId}' not found."));
 
-        col.Delete(clusterId);
-        RecordHistory("cluster", clusterId, "delete", existing.Config, null);
+        _clusterRepository.Delete(clusterId);
+        RecordHistory("cluster", clusterId, "delete", existing, null);
         _provider.UpdateConfig("cluster", clusterId, deleted: true);
         return Ok(new { Message = "Cluster deleted." });
     }
@@ -285,10 +283,8 @@ public class ProxyConfigController : ControllerBase
     [HttpGet("backup")]
     public IActionResult Backup()
     {
-        var routes = _db.Database.GetCollection<RouteConfigWrapper>("routes")
-            .FindAll().Select(x => x.Config).ToList();
-        var clusters = _db.Database.GetCollection<ClusterConfigWrapper>("clusters")
-            .FindAll().Select(x => x.Config).ToList();
+        var routes   = _routeRepository.GetAll().ToList();
+        var clusters = _clusterRepository.GetAll().ToList();
 
         var payload = new ProxyConfigPayload { Routes = routes, Clusters = clusters };
         var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
@@ -307,7 +303,7 @@ public class ProxyConfigController : ControllerBase
         db.BeginTrans();
         try
         {
-            var routesCol = db.GetCollection<RouteConfigWrapper>("routes");
+            var routesCol   = db.GetCollection<RouteConfigWrapper>("routes");
             var clustersCol = db.GetCollection<ClusterConfigWrapper>("clusters");
 
             routesCol.DeleteAll();
@@ -359,8 +355,8 @@ public class ProxyConfigController : ControllerBase
     [HttpGet("summary")]
     public IActionResult GetSummary()
     {
-        var routes   = _db.Database.GetCollection<RouteConfigWrapper>("routes").Count();
-        var clusters = _db.Database.GetCollection<ClusterConfigWrapper>("clusters").Count();
+        var routes   = _routeRepository.Count();
+        var clusters = _clusterRepository.Count();
         var since    = DateTime.UtcNow.AddHours(-24);
         var requests = _logService.GetTotalCount();
         var errors   = _logService.CountErrors(since);

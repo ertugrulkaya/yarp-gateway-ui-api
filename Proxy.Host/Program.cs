@@ -5,6 +5,7 @@ using Proxy.Host.Models;
 using Microsoft.IdentityModel.Tokens;
 using Proxy.Host.Middleware;
 using Proxy.Host.Providers;
+using Proxy.Host.Repositories;
 using Proxy.Host.Services;
 using Scalar.AspNetCore;
 using System.Text;
@@ -42,6 +43,10 @@ builder.Services.AddHostedService<HistoryWriterService>();
 // Health checks
 builder.Services.AddHealthChecks()
     .AddCheck<LiteDbHealthCheck>("litedb");
+
+// Repository pattern
+builder.Services.AddSingleton<IRouteRepository, LiteDbRouteRepository>();
+builder.Services.AddSingleton<IClusterRepository, LiteDbClusterRepository>();
 
 // Configure Custom YARP Provider
 builder.Services.AddSingleton<LiteDbProxyConfigProvider>();
