@@ -52,6 +52,7 @@ export class LogsComponent implements OnInit {
   readonly httpMethods = HTTP_METHODS;
   readonly filtersOpen = signal(false);
   readonly isLoading = signal(false);
+  readonly hasError = signal(false);
   readonly skeletonRows = Array(8).fill(0);
 
   // Filter state
@@ -98,6 +99,7 @@ export class LogsComponent implements OnInit {
     if (this.sortDir())        filters.sortDir    = this.sortDir();
 
     this.isLoading.set(true);
+    this.hasError.set(false);
     this.logsService.getLogs(this.pageSize, offset, filters).subscribe({
       next: (response) => {
         this.dataSource.data = response.data;
@@ -107,6 +109,7 @@ export class LogsComponent implements OnInit {
       },
       error: () => {
         this.isLoading.set(false);
+        this.hasError.set(true);
         this.cdr.markForCheck();
       }
     });

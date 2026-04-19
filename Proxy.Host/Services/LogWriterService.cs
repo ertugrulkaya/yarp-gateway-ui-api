@@ -3,16 +3,37 @@ namespace Proxy.Host.Services;
 public class LogWriterService : BackgroundService
 {
     private readonly LogService _logService;
+    private readonly ILogger<LogWriterService> _logger;
 
-    public LogWriterService(LogService logService) => _logService = logService;
+    public LogWriterService(LogService logService, ILogger<LogWriterService> logger)
+    {
+        _logService = logService;
+        _logger     = logger;
+    }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        await foreach (var entry in _logService.Reader.ReadAllAsync(stoppingToken))
+        _logger.LogInformation("LogWriterService started.");
+        try
         {
-            try { _logService.WriteToDb(entry); }
-            catch { /* never let a write failure crash the background loop */ }
+            await foreach (var entry in _logService.Reader.ReadAllAsync(stoppingToken))
+            {
+                try
+                {
+                    _logService.WriteToDb(entry);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "WriteToDb failed for entry {Path} {Method}", entry.Path, entry.Method);
+                }
+            }
         }
+        catch (OperationCanceledException) { /* normal shutdown */ }
+        catch (Exception ex)
+        {
+            _logger.LogCritical(ex, "LogWriterService crashed — no more logs will be written!");
+        }
+        _logger.LogInformation("LogWriterService stopped.");
     }
 
     public override async Task StopAsync(CancellationToken cancellationToken)

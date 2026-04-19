@@ -96,7 +96,17 @@ public class LiteDbProxyConfigProvider : IProxyConfigProvider, IDisposable
                 var wrapper = _liteDbService.Database
                     .GetCollection<ClusterConfigWrapper>("clusters").FindById(entityId);
                 if (wrapper != null)
-                    _clusterCache[entityId] = MapCluster(wrapper.Config);
+                {
+                    try
+                    {
+                        _clusterCache[entityId] = MapCluster(wrapper.Config);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning("Cluster '{ClusterId}' skipped — {Message}", entityId, ex.Message);
+                        _clusterCache.TryRemove(entityId, out _);
+                    }
+                }
             }
         }
 
@@ -186,7 +196,18 @@ public class LiteDbProxyConfigProvider : IProxyConfigProvider, IDisposable
         {
             dbClusterIds.Add(wrapper.ClusterId);
             if (!_clusterCache.ContainsKey(wrapper.ClusterId))
-                _clusterCache[wrapper.ClusterId] = MapCluster(wrapper.Config);
+            {
+                try
+                {
+                    _clusterCache[wrapper.ClusterId] = MapCluster(wrapper.Config);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(
+                        "Cluster '{ClusterId}' skipped — {Message}",
+                        wrapper.ClusterId, ex.Message);
+                }
+            }
         }
 
         // Evict deleted entries from caches
@@ -255,14 +276,15 @@ public class LiteDbProxyConfigProvider : IProxyConfigProvider, IDisposable
 
     private static ClusterConfig MapCluster(ClusterDto dto)
     {
-        var destinations = dto.Destinations.ToDictionary(
-            kvp => kvp.Key,
-            kvp => new DestinationConfig
-            {
-                Address = kvp.Value.Address,
-                Health = kvp.Value.Health,
-                Metadata = kvp.Value.Metadata,
-            });
+        var destinations = (dto.Destinations ?? new Dictionary<string, DestinationDto>())
+            .ToDictionary(
+                kvp => kvp.Key,
+                kvp => new DestinationConfig
+                {
+                    Address = kvp.Value.Address,
+                    Health = kvp.Value.Health,
+                    Metadata = kvp.Value.Metadata,
+                });
 
         SessionAffinityConfig? sessionAffinity = null;
         if (dto.SessionAffinity is { } sa)

@@ -75,6 +75,12 @@
     }
 
     <mat-card-content>
+      @if (hasError()) {
+        <div class="error-banner">
+          <mat-icon>error_outline</mat-icon>
+          Loglar yüklenemedi. Sunucu loglarını kontrol edin veya sayfayı yenileyin.
+        </div>
+      }
       @if (isLoading()) {
         <div class="skeleton-rows" aria-busy="true" aria-label="Loading logs...">
           @for (i of skeletonRows; track i) {
