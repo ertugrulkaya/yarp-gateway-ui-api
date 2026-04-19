@@ -11,8 +11,9 @@ public class LiteDbService : IHostedService
 
     public LiteDbService(IConfiguration configuration)
     {
-        var dbPath = configuration["LiteDb:Path"] ?? "proxy.db";
-        _db = new LiteDatabase($"Filename={dbPath};Connection=shared");
+        var dbPath = configuration["LiteDb:Path"] ?? "data/proxy.db";
+        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(dbPath))!);
+        _db = new LiteDatabase(dbPath);
     }
 
     public virtual LiteDatabase Database => _db;

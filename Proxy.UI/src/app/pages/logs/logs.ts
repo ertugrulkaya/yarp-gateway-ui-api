@@ -1,4 +1,6 @@
-import { Component, OnInit, inject, ViewChild, ChangeDetectionStrategy, ChangeDetectorRef, signal } from '@angular/core';
+import { Component, OnInit, inject, ViewChild, ChangeDetectionStrategy, ChangeDetectorRef, signal, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { interval } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
@@ -43,6 +45,7 @@ export class LogsComponent implements OnInit {
   logsService = inject(LogsService);
   private cdr = inject(ChangeDetectorRef);
   private dialog = inject(MatDialog);
+  private destroyRef = inject(DestroyRef);
 
   dataSource = new MatTableDataSource<LogEntry>([]);
   totalLogs = 0;
@@ -79,6 +82,11 @@ export class LogsComponent implements OnInit {
 
   ngOnInit() {
     this.loadLogs();
+    interval(10_000)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        if (!this.isLoading()) this.loadLogs();
+      });
   }
 
   onSortChange(sort: Sort) {

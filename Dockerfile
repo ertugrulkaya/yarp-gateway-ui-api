@@ -37,9 +37,11 @@ WORKDIR /app
 # Copy published API (already contains wwwroot from stage 2)
 COPY --from=api-build /app/publish .
 
-# Data directory for LiteDB files — mount a volume here
+# Data directory for LiteDB files — mount a volume here to persist data
 RUN mkdir -p /app/data
-ENV LITEDB_PATH=/app/data
+ENV LiteDb__Path=/app/data/proxy.db
+ENV LiteDb__LogPath=/app/data/proxy-log.db
+VOLUME ["/app/data"]
 
 EXPOSE 8080
 

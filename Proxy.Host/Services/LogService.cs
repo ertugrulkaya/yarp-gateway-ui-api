@@ -21,8 +21,9 @@ public class LogService : IDisposable
 
     public LogService(IConfiguration configuration)
     {
-        var dbPath = configuration["LiteDb:LogPath"] ?? "proxy-log.db";
-        _db = new LiteDatabase($"Filename={dbPath};Connection=shared");
+        var dbPath = configuration["LiteDb:LogPath"] ?? "data/proxy-log.db";
+        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(dbPath))!);
+        _db = new LiteDatabase(dbPath);
 
         var collection = _db.GetCollection<LogEntry>(CollectionName);
         collection.EnsureIndex(x => x.Timestamp);
