@@ -21,7 +21,7 @@ public class LogService : IDisposable
 
     public LogService(IConfiguration configuration)
     {
-        var dbPath = configuration["LiteDb:LogPath"] ?? "data/proxy-log.db";
+        var dbPath = configuration["LiteDb:LogPath"] ?? "data/trafik-proxy-log.db";
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(dbPath))!);
         _db = new LiteDatabase(dbPath);
 

@@ -40,7 +40,7 @@ COPY --from=api-build /app/publish .
 # Data directory for LiteDB files — mount a volume here to persist data
 RUN mkdir -p /app/data
 ENV LiteDb__Path=/app/data/proxy.db
-ENV LiteDb__LogPath=/app/data/proxy-log.db
+ENV LiteDb__LogPath=/app/data/trafik-proxy-log.db
 VOLUME ["/app/data"]
 
 EXPOSE 8080
