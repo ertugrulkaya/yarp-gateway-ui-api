@@ -82,17 +82,25 @@ import { html as diff2html } from 'diff2html';
     .view-toggle { display: flex; justify-content: flex-end; margin-bottom: 8px; }
 
     mat-dialog-content {
-      min-width: 1100px;
-      max-width: 1200px;
+      width: 95vw;
+      max-width: 1400px;
+      min-width: 1200px;
       max-height: 85vh;
       overflow: auto;
       padding: 0 24px 8px;
     }
 
     /* diff2html overrides */
-    .diff-output :global(.d2h-wrapper) { font-size: 12px; }
+    .diff-output {
+      font-size: 13px;
+      min-height: 300px;
+    }
+    .diff-output :global(.d2h-wrapper) { font-size: 13px; }
     .diff-output :global(.d2h-file-header) { display: none; }
-    .diff-output :global(.d2h-code-linenumber) { min-width: 36px; }
+    .diff-output :global(.d2h-code-linenumber) { min-width: 40px; }
+    .diff-output :global(.d2h-code) { line-height: 1.4; }
+    .diff-output :global(.d2h-del) { background: #ffebee; }
+    .diff-output :global(.d2h-ins) { background: #e8f5e9; }
 
     .single-panel { display: flex; flex-direction: column; }
     .panel-label {
