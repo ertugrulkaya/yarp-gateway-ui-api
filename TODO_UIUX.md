@@ -23,25 +23,17 @@
 
 ## 🟡 ORTA — Bu Sprintte
 
-### [UI] Dashboard Table Responsive
-- **Dosya**: `Proxy.UI/src/app/pages/dashboard/dashboard.html`
-- **Sorun**: `mat-table` küçük ekranda taşıyor
-- **Öneri**: Overflow container ekle, cards grid için flex breakpoints
+### [UI] Dashboard Table Responsive ✅
+- **Dosya**: `dashboard.css`
+- **Çözüm**: Table overflow-x: auto + responsive breakpoint
 
-### [UI] Logs Table 7 Kolon Taşıyor
-- **Dosya**: `Proxy.UI/src/app/pages/logs/logs.html`
-- **Sorun**: Path/destination kolonları uzun, taşıyor
-- **Öneri**: Table overflow wrapper ekle
+### [UI] Logs Filter Panel Mobilde Taşıyor ✅
+- **Dosya**: `logs.css`
+- **Çözüm**: Flex wrap + mobile breakpoint (600px)
 
-### [UI] Logs Status Renk Körlüğü
-- **Dosya**: `logs.html`
-- **Sorun**: 2xx=green, 4xx=orange, 5xx=red renk körlüğü dostu değil
-- **Öneri**: Icon ekle veya tooltip ile status göster
-
-### [UX] Filter Panel Mobilde Taşıyor
-- **Dosya**: `logs.html`
-- **Sorun**: 5 filter field tek satırda
-- **Öneri**: Flex wrap et
+### [UI] Logs Table 7 Kolon Taşıyor ✅
+- **Dosya**: `logs.css`
+- **Çözüm**: Table min-width: 800px + overflow container
 
 ### [UI] History Table Pagination Küçük
 - **Dosya**: `history.html`

@@ -130,11 +130,19 @@ th.mat-mdc-header-cell:last-of-type, td.mat-mdc-cell:last-of-type {
 .full-table {
     width: 100%;
     margin-top: 12px;
+    overflow-x: auto;
 }
 
 .muted {
     color: var(--mat-sys-on-surface-variant, #666);
     font-style: italic;
+}
+
+@media (max-width: 600px) {
+    .full-table {
+        display: block;
+        overflow-x: auto;
+    }
 }
 
 /* Empty state */
