@@ -272,6 +272,13 @@ public class ProxyConfigController : ControllerBase
         if (existing == null)
             return NotFound(new ApiError("NOT_FOUND", $"Cluster '{clusterId}' not found."));
 
+        var routesUsingCluster = _routeRepository.GetAll()
+            .Where(r => r.ClusterId == clusterId)
+            .ToList();
+        if (routesUsingCluster.Count > 0)
+            return UnprocessableEntity(new ApiError("UNPROCESSABLE",
+                $"Cannot delete cluster '{clusterId}'. It is referenced by {routesUsingCluster.Count} route(s): {string.Join(", ", routesUsingCluster.Select(r => r.RouteId))}."));
+
         _clusterRepository.Delete(clusterId);
         RecordHistory("cluster", clusterId, "delete", existing, null);
         _provider.UpdateConfig("cluster", clusterId, deleted: true);

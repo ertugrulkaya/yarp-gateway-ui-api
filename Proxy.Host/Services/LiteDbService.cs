@@ -12,7 +12,10 @@ public class LiteDbService : IHostedService
     public LiteDbService(IConfiguration configuration)
     {
         var dbPath = configuration["LiteDb:Path"] ?? "data/proxy.db";
-        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(dbPath))!);
+        if (!dbPath.Equals(":memory:", StringComparison.OrdinalIgnoreCase))
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(dbPath))!);
+        }
         _db = new LiteDatabase(dbPath);
     }
 

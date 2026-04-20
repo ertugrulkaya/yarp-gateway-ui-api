@@ -31,6 +31,11 @@ public class AuthController : ControllerBase
     [EnableRateLimiting("LoginPolicy")]
     public IActionResult Login(LoginRequest request)
     {
+        if (string.IsNullOrWhiteSpace(request.Username))
+            return BadRequest(new ApiError("BAD_REQUEST", "Username is required."));
+        if (string.IsNullOrWhiteSpace(request.Password))
+            return BadRequest(new ApiError("BAD_REQUEST", "Password is required."));
+
         var users = _liteDbService.Database.GetCollection<User>("users");
         var user = users.FindOne(x => x.Username == request.Username);
 
@@ -71,6 +76,9 @@ public class AuthController : ControllerBase
     [Authorize]
     public IActionResult ChangePassword(ChangePasswordRequest request)
     {
+        if (!IsPasswordComplexEnough(request.NewPassword))
+            return BadRequest(new ApiError("BAD_REQUEST", "Password must be at least 8 characters and contain at least one letter and one digit."));
+
         var username = User.FindFirstValue(ClaimTypes.Name);
         if (username == null) return Unauthorized(new ApiError("UNAUTHORIZED", "Token is missing or invalid."));
 
@@ -106,6 +114,20 @@ public class AuthController : ControllerBase
             passwordSalt = hmac.Key;
             passwordHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(password));
         }
+    }
+
+    private static bool IsPasswordComplexEnough(string password)
+    {
+        if (string.IsNullOrEmpty(password) || password.Length < 8)
+            return false;
+        bool hasLetter = false, hasDigit = false;
+        foreach (var c in password)
+        {
+            if (char.IsLetter(c)) hasLetter = true;
+            else if (char.IsDigit(c)) hasDigit = true;
+            if (hasLetter && hasDigit) return true;
+        }
+        return false;
     }
 
     private string CreateToken(User user)
