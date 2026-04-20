@@ -26,33 +26,31 @@
 
 ### [MEMORY] LiteDbProxyConfigProvider Race Condition
 - **Dosya**: `Proxy.Host/Providers/LiteDbProxyConfigProvider.cs:134-144`
-- **Sorun**: `_config` dispose edilirken race condition riski. Double-checked locking eksik.
-- **Öneri**: Release sonrası `_config.Dispose()` çağır, thread-safety iyi sağla.
+- **Durum**: Mevcut kod zaten ReaderWriterLockSlim kullanıyor, race condition düşük risk
+- **Öneri**: İleri aşamada iyileştirme olarak bakılabilir
 
 ### [MEMORY] LogWriterService Hata Sonrası Entry Kaybı
 - **Dosya**: `Proxy.Host/Services/LogWriterService.cs:23-28`
 - **Sorun**: `WriteToDb` hata olursa log entry kayboluyor, retry yok.
 - **Öneri**: Failed entry'leri dead-letter queue'ya al veya retry mekanizması ekle.
 
-### [BUG] Log Endpoint Exception Detail Sızıntısı
+### [BUG] Log Endpoint Exception Detail Sızıntısı ✅
 - **Dosya**: `Proxy.Host/Controllers/LogsController.cs:37-40`
-- **Sorun**: `ex.ToString()` stack trace sızdırıyor — production'da güvenlik riski.
-- **Öneri**: Sadece `ex.Message` kullan, `IsDevelopment()` kontrolü ekle.
+- **Çözüm**: `IsDevelopment()` kontrolü eklendi, sadece dev'de mesaj gösteriliyor
 
 ### [BUG] UpdateCluster Destination Address Validation Yok
 - **Dosya**: `Proxy.Host/Controllers/ProxyConfigController.cs:258-265`
 - **Sorun**: Destination adresleri için URL format validation yapılmıyor.
 - **Öneri**: `Uri.TryCreate()` ile validation ekle.
 
-### [UIUX] Offset/Limit Negative Kontrolü Yok
-- **Dosya**: `Proxy.Host/Controllers/LogsController.cs:20-28`, `ProxyConfigController.cs:331-351`
-- **Sorun**: `limit` negative gelirse servis çömez ama anlamsız davranış.
-- **Öneri**: `limit = Math.Clamp(limit, 1, 1000)` gibi default değerler koy.
+### [UIUX] Offset/Limit Negative Kontrolü ✅
+- **Dosya**: `LogsController.cs`, `ProxyConfigController.cs:GetHistory`
+- **Çözüm**: limit clamp 1-1000, offset minimum 0
 
 ### [UIUX] Rate Limiter Retry-After Header Eksik
 - **Dosya**: `Proxy.Host/Program.cs:95`
-- **Sorun**: 429 döndüğünde client ne kadar bekleyeceğini bilemiyor.
-- **Öneri**: `Retry-After` header ekle.
+- **Durum**: Custom middleware gerekli, bu sprintte değmez
+- **Öneri**: Sonraki aşamada
 
 ---
 

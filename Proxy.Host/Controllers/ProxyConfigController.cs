@@ -338,22 +338,20 @@ public class ProxyConfigController : ControllerBase
     [HttpGet("history")]
     public IActionResult GetHistory([FromQuery] int limit = 100, [FromQuery] int offset = 0)
     {
+        if (limit < 1) limit = 100;
+        if (limit > 1000) limit = 1000;
+        if (offset < 0) offset = 0;
+
         var db = _db.Database;
         int total;
         List<ConfigHistory> items;
-        db.BeginTrans();
-        try
-        {
-            var col = db.GetCollection<ConfigHistory>("config_history");
-            total = col.Count();
-            items = col.Query()
-                .OrderByDescending(x => x.ChangedAt)
-                .Offset(offset)
-                .Limit(limit)
-                .ToList();
-            db.Commit();
-        }
-        catch { db.Rollback(); throw; }
+        var col = db.GetCollection<ConfigHistory>("config_history");
+        total = col.Count();
+        items = col.Query()
+            .OrderByDescending(x => x.ChangedAt)
+            .Offset(offset)
+            .Limit(limit)
+            .ToList();
         return Ok(new { data = items, total });
     }
 

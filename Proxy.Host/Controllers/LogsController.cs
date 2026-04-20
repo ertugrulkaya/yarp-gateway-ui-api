@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Proxy.Host.Models;
 using Proxy.Host.Services;
 
 namespace Proxy.Host.Controllers;
@@ -10,10 +11,12 @@ namespace Proxy.Host.Controllers;
 public class LogsController : ControllerBase
 {
     private readonly LogService _logService;
+    private readonly IWebHostEnvironment _env;
 
-    public LogsController(LogService logService)
+    public LogsController(LogService logService, IWebHostEnvironment env)
     {
         _logService = logService;
+        _env = env;
     }
 
     [HttpGet]
@@ -29,6 +32,10 @@ public class LogsController : ControllerBase
     {
         try
         {
+            if (limit < 1) limit = 100;
+            if (limit > 1000) limit = 1000;
+            if (offset < 0) offset = 0;
+
             var logs = _logService.GetLogs(limit, offset, clusterId, statusCode, clientIp, method, sortBy, sortDir).ToList();
             var total = _logService.GetTotalCount(clusterId, statusCode, clientIp, method);
 
@@ -36,7 +43,8 @@ public class LogsController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { Error = ex.Message, Details = ex.ToString() });
+            var message = _env.IsDevelopment() ? ex.Message : "An unexpected error occurred.";
+            return StatusCode(500, new ApiError("INTERNAL_SERVER_ERROR", message));
         }
     }
 
