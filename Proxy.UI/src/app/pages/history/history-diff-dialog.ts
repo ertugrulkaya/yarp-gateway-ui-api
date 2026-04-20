@@ -82,23 +82,23 @@ import { html as diff2html } from 'diff2html';
     .view-toggle { display: flex; justify-content: flex-end; margin-bottom: 8px; }
 
     mat-dialog-content {
-      width: 95vw;
-      max-width: 1400px;
-      min-width: 1200px;
-      max-height: 85vh;
+      width: 98vw;
+      max-width: 1800px;
+      min-width: 1600px;
+      max-height: 90vh;
       overflow: auto;
       padding: 0 24px 8px;
     }
 
     /* diff2html overrides */
     .diff-output {
-      font-size: 13px;
-      min-height: 300px;
+      font-size: 14px;
+      min-height: 400px;
     }
-    .diff-output :global(.d2h-wrapper) { font-size: 13px; }
+    .diff-output :global(.d2h-wrapper) { font-size: 14px; }
     .diff-output :global(.d2h-file-header) { display: none; }
-    .diff-output :global(.d2h-code-linenumber) { min-width: 40px; }
-    .diff-output :global(.d2h-code) { line-height: 1.4; }
+    .diff-output :global(.d2h-code-linenumber) { min-width: 48px; }
+    .diff-output :global(.d2h-code) { line-height: 1.5; }
     .diff-output :global(.d2h-del) { background: #ffebee; }
     .diff-output :global(.d2h-ins) { background: #e8f5e9; }
 
