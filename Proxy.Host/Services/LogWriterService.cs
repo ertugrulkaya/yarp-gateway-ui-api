@@ -1,14 +1,20 @@
+using System.Text.Json;
+
 namespace Proxy.Host.Services;
 
 public class LogWriterService : BackgroundService
 {
     private readonly LogService _logService;
     private readonly ILogger<LogWriterService> _logger;
+    private readonly string _failedLogPath;
 
     public LogWriterService(LogService logService, ILogger<LogWriterService> logger)
     {
         _logService = logService;
-        _logger     = logger;
+        _logger = logger;
+        _failedLogPath = Path.Combine(AppContext.BaseDirectory, "data", "failed-logs.jsonl");
+        var dir = Path.GetDirectoryName(_failedLogPath);
+        if (dir != null) Directory.CreateDirectory(dir);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -25,6 +31,7 @@ public class LogWriterService : BackgroundService
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "WriteToDb failed for entry {Path} {Method}", entry.Path, entry.Method);
+                    await WriteFailedEntryToFile(entry);
                 }
             }
         }
@@ -36,12 +43,23 @@ public class LogWriterService : BackgroundService
         _logger.LogInformation("LogWriterService stopped.");
     }
 
+    private async Task WriteFailedEntryToFile(Models.LogEntry entry)
+    {
+        try
+        {
+            var json = JsonSerializer.Serialize(entry);
+            await File.AppendAllTextAsync(_failedLogPath, json + Environment.NewLine);
+        }
+        catch
+        {
+            _logger.LogCritical("Failed to write failed entry to backup file. Entry lost.");
+        }
+    }
+
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
-        // Stop accepting new entries, then drain whatever is still in the channel
         _logService.CompleteChannel();
 
-        // Wait for ExecuteAsync to finish draining (max 5 seconds)
         using var drainCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(
             cancellationToken, drainCts.Token);

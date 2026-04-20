@@ -29,28 +29,26 @@
 - **Durum**: Mevcut kod zaten ReaderWriterLockSlim kullanıyor, race condition düşük risk
 - **Öneri**: İleri aşamada iyileştirme olarak bakılabilir
 
-### [MEMORY] LogWriterService Hata Sonrası Entry Kaybı
-- **Dosya**: `Proxy.Host/Services/LogWriterService.cs:23-28`
-- **Sorun**: `WriteToDb` hata olursa log entry kayboluyor, retry yok.
-- **Öneri**: Failed entry'leri dead-letter queue'ya al veya retry mekanizması ekle.
+### [MEMORY] LogWriterService Hata Sonrası Entry Kaybı ✅
+- **Dosya**: `Proxy.Host/Services/LogWriterService.cs`
+- **Çözüm**: Failed entry'ler `data/failed-logs.jsonl` dosyasına yedekleniyor
 
 ### [BUG] Log Endpoint Exception Detail Sızıntısı ✅
-- **Dosya**: `Proxy.Host/Controllers/LogsController.cs:37-40`
-- **Çözüm**: `IsDevelopment()` kontrolü eklendi, sadece dev'de mesaj gösteriliyor
+- **Dosya**: `Proxy.Host/Controllers/LogsController.cs`
+- **Çözüm**: `IsDevelopment()` kontrolü eklendi
 
-### [BUG] UpdateCluster Destination Address Validation Yok
-- **Dosya**: `Proxy.Host/Controllers/ProxyConfigController.cs:258-265`
-- **Sorun**: Destination adresleri için URL format validation yapılmıyor.
-- **Öneri**: `Uri.TryCreate()` ile validation ekle.
+### [BUG] UpdateCluster Destination Address Validation
+- **Dosya**: `Proxy.Host/Controllers/ProxyConfigController.cs`
+- **Durum**: YARP validator zaten validation yapıyor, ek kontrol gerekmez
 
 ### [UIUX] Offset/Limit Negative Kontrolü ✅
-- **Dosya**: `LogsController.cs`, `ProxyConfigController.cs:GetHistory`
 - **Çözüm**: limit clamp 1-1000, offset minimum 0
 
-### [UIUX] Rate Limiter Retry-After Header Eksik
-- **Dosya**: `Proxy.Host/Program.cs:95`
-- **Durum**: Custom middleware gerekli, bu sprintte değmez
-- **Öneri**: Sonraki aşamada
+### [UIUX] Rate Limiter Retry-After Header
+- **Durum**: Custom middleware gerekli, sonraki aşamada
+
+### [CODE] History Transaction Gereksiz ✅
+- **Çözüm**: Transaction kaldırıldı, basit query
 
 ---
 
