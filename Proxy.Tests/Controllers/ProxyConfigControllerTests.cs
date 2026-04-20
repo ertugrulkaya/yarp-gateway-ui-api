@@ -237,14 +237,33 @@ public class ProxyConfigControllerTests
     }
 
     [Fact]
-    public void DeleteCluster_WhenExists_DeletesAndReturnsOk()
+    public void DeleteCluster_WhenExists_NoRoutes_DeletesAndReturnsOk()
     {
         _clusterRepo.Setup(c => c.FindById("c1")).Returns(new ClusterDto { ClusterId = "c1" });
+        _routeRepo.Setup(r => r.GetAll()).Returns(new List<RouteDto>());
 
         var result = CreateController().DeleteCluster("c1");
 
         Assert.IsType<OkObjectResult>(result);
         _clusterRepo.Verify(c => c.Delete("c1"), Times.Once);
+    }
+
+    [Fact]
+    public void DeleteCluster_WhenReferencedByRoutes_ReturnsUnprocessable()
+    {
+        _clusterRepo.Setup(c => c.FindById("c1")).Returns(new ClusterDto { ClusterId = "c1" });
+        _routeRepo.Setup(r => r.GetAll()).Returns(new List<RouteDto>
+        {
+            new RouteDto { RouteId = "r1", ClusterId = "c1" },
+            new RouteDto { RouteId = "r2", ClusterId = "c1" }
+        });
+
+        var result = CreateController().DeleteCluster("c1");
+
+        var unprocessable = Assert.IsType<UnprocessableEntityObjectResult>(result);
+        var json = System.Text.Json.JsonSerializer.Serialize(unprocessable.Value);
+        Assert.Contains("r1", json);
+        Assert.Contains("r2", json);
     }
 
     // ── GetSummary ────────────────────────────────────────────────────────────
