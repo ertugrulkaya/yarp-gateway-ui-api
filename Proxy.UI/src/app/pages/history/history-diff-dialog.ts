@@ -82,9 +82,9 @@ import { html as diff2html } from 'diff2html';
     .view-toggle { display: flex; justify-content: flex-end; margin-bottom: 8px; }
 
     mat-dialog-content {
-      min-width: min(860px, 90vw);
-      max-width: 90vw;
-      max-height: 72vh;
+      min-width: 1100px;
+      max-width: 1200px;
+      max-height: 85vh;
       overflow: auto;
       padding: 0 24px 8px;
     }

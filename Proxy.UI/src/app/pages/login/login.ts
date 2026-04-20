@@ -1,10 +1,11 @@
-import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth';
 import { CommonModule } from '@angular/common';
@@ -19,7 +20,8 @@ import { CommonModule } from '@angular/common';
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    MatProgressSpinnerModule
   ],
   templateUrl: './login.html',
   styleUrls: ['./login.css'],
@@ -31,6 +33,8 @@ export class LoginComponent {
   router = inject(Router);
   snackBar = inject(MatSnackBar);
 
+  isLoading = signal(false);
+
   loginForm = this.fb.group({
     username: ['Admin', Validators.required],
     password: ['', Validators.required]
@@ -38,8 +42,10 @@ export class LoginComponent {
 
   onSubmit() {
     if (this.loginForm.valid) {
+      this.isLoading.set(true);
       this.authService.login(this.loginForm.value).subscribe({
         next: (res) => {
+          this.isLoading.set(false);
           if (res.mustChangePassword) {
             this.router.navigate(['/change-password']);
           } else {
@@ -47,6 +53,7 @@ export class LoginComponent {
           }
         },
         error: () => {
+          this.isLoading.set(false);
           this.snackBar.open('Login failed. Check credentials.', 'Close', { duration: 3000 });
         }
       });

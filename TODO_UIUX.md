@@ -7,20 +7,17 @@
 
 ## 🔴 KRITIK — Hemen Yapılacak
 
-### [UI] HistoryDiffDialog Çok Küçük
-- **Dosya**: `Proxy.UI/src/app/pages/history/history-diff-dialog.ts:85-87`
-- **Sorun**: `min-width: 860px` diff içeriği için yetersiz, mobilde taşıyor
-- **Öneri**: `min-width: 1100px`, `max-height: 85vh`, split view için `width: 1200px`
+### [UI] HistoryDiffDialog Çok Küçük ✅
+- **Dosya**: `Proxy.UI/src/app/pages/history/history-diff-dialog.ts`
+- **Çözüm**: `min-width: 1100px`, `max-width: 1200px`, `max-height: 85vh`
 
-### [UX] Login Loading State Yok
-- **Dosya**: `Proxy.UI/src/app/pages/login/login.html`
-- **Sorun**: Submit sırasında spinner yok, kullanıcı feedback almıyor
-- **Öneri**: Butona `matSpinner` ekle
+### [UX] Login Loading State Yok ✅
+- **Dosya**: `Proxy.UI/src/app/pages/login/login.ts`, `login.html`
+- **Çözüm**: `isLoading` signal + matSpinner eklendi
 
-### [UX] ChangePassword Loading State Yok
-- **Dosya**: `Proxy.UI/src/app/pages/change-password/change-password.html`
-- **Sorun**: Submit sırasında loading yok
-- **Öneri**: Spinner ekle
+### [UX] ChangePassword Loading State Yok ✅
+- **Dosya**: `Proxy.UI/src/app/pages/change-password/change-password.ts`, `change-password.html`
+- **Çözüm**: `isLoading` signal + matSpinner eklendi
 
 ---
 
