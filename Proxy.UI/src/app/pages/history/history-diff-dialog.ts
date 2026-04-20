@@ -81,25 +81,53 @@ import { html as diff2html } from 'diff2html';
 
     .view-toggle { display: flex; justify-content: flex-end; margin-bottom: 8px; }
 
-    mat-dialog-content {
-      width: 90vw;
-      max-width: 1400px;
-      max-height: 90vh;
-      overflow: auto;
-      padding: 0 24px 8px;
+    :host {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
     }
 
-    /* diff2html overrides */
-    .diff-output {
-      font-size: 13px;
-      min-height: 350px;
+    mat-dialog-content {
+      flex: 1 1 auto;
+      overflow: auto;
+      padding: 0 24px 8px;
+      max-height: 75vh;
+      height: auto;
     }
-    .diff-output :global(.d2h-wrapper) { font-size: 13px; }
-    .diff-output :global(.d2h-file-header) { display: none; }
-    .diff-output :global(.d2h-code-linenumber) { min-width: 40px; }
-    .diff-output :global(.d2h-code) { line-height: 1.4; }
-    .diff-output :global(.d2h-del) { background: #ffebee; }
-    .diff-output :global(.d2h-ins) { background: #e8f5e9; }
+
+    /* diff2html overrides — satır/yazı tipi override'ları styles.css'e taşındı */
+    .diff-output {
+      max-height: calc(75vh - 120px);
+      overflow: auto;
+    }
+    .diff-output ::ng-deep .d2h-del { background: #ffebee; }
+    .diff-output ::ng-deep .d2h-ins { background: #e8f5e9; }
+    .diff-output ::ng-deep .d2h-file-diff {
+      overflow-x: auto;
+    }
+    .diff-output ::ng-deep table {
+      width: 100%;
+      table-layout: fixed;
+    }
+    /* Split view: iki panel yan yana, her biri kendi overflow'u */
+    .diff-output ::ng-deep .d2h-files-diff {
+      display: flex;
+      overflow-x: auto;
+    }
+    .diff-output ::ng-deep .d2h-file-side-diff {
+      flex: 1 1 50%;
+      min-width: 0;
+      overflow-x: auto;
+    }
+    .diff-output ::ng-deep .d2h-file-side-diff:first-child {
+      border-right: 1px solid #ddd;
+      margin-right: 0;
+      padding-right: 0;
+    }
+    .diff-output ::ng-deep .d2h-file-side-diff:last-child {
+      margin-left: 0;
+      padding-left: 0;
+    }
 
     .single-panel { display: flex; flex-direction: column; }
     .panel-label {
@@ -109,9 +137,16 @@ import { html as diff2html } from 'diff2html';
     .panel-label.created { background: #e8f5e9; color: #2e7d32; }
     .panel-label.deleted { background: #fce4e4; color: #c62828; }
     .json-pre {
-      margin: 0; padding: 12px; background: #fafafa;
-      border: 1px solid #e0e0e0; border-radius: 0 0 4px 4px;
-      font-size: 12px; overflow: auto; white-space: pre;
+      margin: 0;
+      padding: 8px 10px;
+      background: #fafafa;
+      border: 1px solid #e0e0e0;
+      border-radius: 0 0 4px 4px;
+      font-size: 12px;
+      line-height: 1.4;
+      font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, 'Courier New', monospace;
+      overflow: auto;
+      white-space: pre;
     }
     .no-data { color: #888; padding: 16px 0; }
   `],
@@ -129,7 +164,7 @@ export class HistoryDiffDialogComponent {
       'Before', 'After',
       oldJson, newJson,
       '', '',
-      { context: 4 }
+      { context: 9999 }
     );
     return diff2html(patch, {
       drawFileList: false,

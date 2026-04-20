@@ -63,8 +63,13 @@ export class HistoryComponent implements OnInit {
 
   openDiff(entry: ConfigHistoryEntry) {
     this.dialog.open(HistoryDiffDialogComponent, {
-      width: '800px',
+      minWidth: '900px',
+      maxWidth: '95vw',
+      width: '50vw',
+      maxHeight: '85vh',
+      height: 'auto',
       data: entry,
+      panelClass: 'diff-dialog-panel',
     });
   }
 
