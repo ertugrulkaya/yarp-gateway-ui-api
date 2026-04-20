@@ -8,7 +8,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { ProxyConfigService, ConfigHistoryEntry } from '../../services/proxy-config';
-import { HistoryDiffDialogComponent } from './history-diff-dialog';
+import { JsonDiffViewerDialogComponent } from './json-diff-viewer-dialog';
 
 @Component({
   selector: 'app-history',
@@ -62,10 +62,10 @@ export class HistoryComponent implements OnInit {
   }
 
   openDiff(entry: ConfigHistoryEntry) {
-    this.dialog.open(HistoryDiffDialogComponent, {
+    this.dialog.open(JsonDiffViewerDialogComponent, {
       minWidth: '900px',
       maxWidth: '95vw',
-      width: '50vw',
+      width: '60vw',
       maxHeight: '85vh',
       height: 'auto',
       data: entry,

@@ -22,6 +22,7 @@
     "@angular/router": "^21.2.0",
     "diff": "^9.0.0",
     "diff2html": "^3.4.56",
+    "json-diff-viewer-component": "^0.6.1",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },
