@@ -51,7 +51,7 @@ export class RawEditorComponent implements OnInit {
           this.isDirty.set(false);
           this.snackBar.open('Configuration saved & applied to YARP!', 'Close', { duration: 4000 });
         },
-        error: () => this.snackBar.open('Error saving configuration.', 'Close', { duration: 4000 }),
+        error: (err) => this.snackBar.open(err?.error?.message ?? 'Error saving configuration.', 'Close', { duration: 6000 }),
       });
     } catch (e: any) {
       this.snackBar.open('Invalid JSON: ' + e.message, 'Close', { duration: 5000 });
@@ -64,7 +64,7 @@ export class RawEditorComponent implements OnInit {
         this.ngOnInit();
         this.snackBar.open('Example configuration seeded!', 'Close', { duration: 4000 });
       },
-      error: () => this.snackBar.open('Error seeding configuration.', 'Close', { duration: 4000 }),
+      error: (err) => this.snackBar.open(err?.error?.message ?? 'Error seeding configuration.', 'Close', { duration: 6000 }),
     });
   }
 
@@ -80,7 +80,7 @@ export class RawEditorComponent implements OnInit {
         a.click();
         URL.revokeObjectURL(url);
       },
-      error: () => this.snackBar.open('Export failed.', 'Close', { duration: 3000 }),
+      error: (err) => this.snackBar.open('Export failed: ' + (err?.error?.message ?? err?.message ?? 'unknown'), 'Close', { duration: 4000 }),
     });
   }
 
