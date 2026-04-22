@@ -1,5 +1,6 @@
 services:
   proxy-manager:
+    image: ertugrulkays/proxy-manager:v1.0
     build:
       context: .
       dockerfile: Dockerfile
@@ -12,8 +13,8 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:8080
       # Override JWT settings via env vars if needed:
-      # - Jwt__Key=YourSecretKeyHere
-      # - Jwt__Issuer=AntiGravityProxyAuth
+      - Jwt__Key=58432b63ad70833bae5f462d256a251afeb6456805922236ba535013ddf69870510c3cc179d2c85b021455e45b9552a91155901eeb5862ed26cc89acb7a23f62
+      - Jwt__Issuer=ProxyAuth
     restart: unless-stopped
 
 volumes:

@@ -1,11 +1,12 @@
 # ─────────────────────────────────────────────
 # Stage 1: Build Angular UI
 # ─────────────────────────────────────────────
-FROM node:22-alpine AS ui-build
+FROM node:25 AS ui-build
 
 WORKDIR /app/ui
 COPY Proxy.UI/package*.json ./
-RUN npm ci --silent
+RUN npm ci --ignore-scripts
+# RUN npm ci --slint
 
 COPY Proxy.UI/ ./
 RUN npm run build -- --configuration production

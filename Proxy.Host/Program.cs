@@ -8,11 +8,27 @@ using Proxy.Host.Providers;
 using Proxy.Host.Repositories;
 using Proxy.Host.Services;
 using Scalar.AspNetCore;
+using Serilog;
 using System.Text;
 using System.Threading.RateLimiting;
 using Yarp.ReverseProxy.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure Serilog with file rotation
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .Enrich.FromLogContext()
+    .Enrich.WithProperty("Application", "YarpProxyManager")
+    .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}")
+    .WriteTo.File(
+        path: "logs/yarpproxymanager-.log",
+        rollingInterval: RollingInterval.Day,
+        retainedFileCountLimit: 7,
+        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}")
+    .CreateLogger();
+
+builder.Host.UseSerilog();
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -92,6 +108,19 @@ builder.Services.AddRateLimiter(options =>
                 QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                 QueueLimit = 0,
             }));
+
+    options.AddPolicy("ChangePasswordPolicy", httpContext =>
+        RateLimitPartition.GetSlidingWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new SlidingWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(15),
+                SegmentsPerWindow = 3,
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0,
+            }));
+
     options.RejectionStatusCode = 429;
 });
 

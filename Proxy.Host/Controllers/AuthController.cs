@@ -74,6 +74,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("change-password")]
     [Authorize]
+    [EnableRateLimiting("ChangePasswordPolicy")]
     public IActionResult ChangePassword(ChangePasswordRequest request)
     {
         if (!IsPasswordComplexEnough(request.NewPassword))

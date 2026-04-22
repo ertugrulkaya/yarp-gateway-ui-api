@@ -1,4 +1,5 @@
 using LiteDB;
+using Microsoft.Extensions.Configuration;
 using Proxy.Host.Models;
 using System.Security.Cryptography;
 using System.Text;
@@ -8,10 +9,12 @@ namespace Proxy.Host.Services;
 public class LiteDbService : IHostedService
 {
     private readonly LiteDatabase _db;
+    private readonly IConfiguration _configuration;
 
     public LiteDbService(IConfiguration configuration)
     {
-        var dbPath = configuration["LiteDb:Path"] ?? "data/proxy.db";
+        _configuration = configuration;
+        var dbPath = _configuration["LiteDb:Path"] ?? "data/proxy.db";
         if (!dbPath.Equals(":memory:", StringComparison.OrdinalIgnoreCase))
         {
             Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(dbPath))!);
@@ -38,10 +41,12 @@ public class LiteDbService : IHostedService
         var users = _db.GetCollection<User>("users");
         if (users.Count() == 0)
         {
-            CreatePasswordHash("Rexadmin1234.", out byte[] hash, out byte[] salt);
+            var username = _configuration["SeedAdmin:Username"] ?? "Admin";
+            var password = _configuration["SeedAdmin:Password"] ?? "Rexadmin1234.";
+            CreatePasswordHash(password, out byte[] hash, out byte[] salt);
             users.Insert(new User
             {
-                Username = "Admin",
+                Username = username,
                 PasswordHash = hash,
                 PasswordSalt = salt,
                 MustChangePassword = true
