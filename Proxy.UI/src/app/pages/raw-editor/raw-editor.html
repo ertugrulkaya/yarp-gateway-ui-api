@@ -18,6 +18,9 @@
           <mat-icon>restore</mat-icon> Restore from File
           <input type="file" accept=".json" (change)="importFromFile($event)" hidden>
         </button>
+        <button mat-stroked-button color="warn" (click)="seedExample()" matTooltip="Replace with example configuration">
+          <mat-icon>add_circle</mat-icon> Seed Example
+        </button>
         <button mat-stroked-button color="primary" (click)="saveConfig()">
           <mat-icon>save</mat-icon> Save & Apply
         </button>

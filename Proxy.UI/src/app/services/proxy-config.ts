@@ -124,6 +124,9 @@ export class ProxyConfigService {
   updateRawConfig(payload: ProxyConfigPayload): Observable<any> {
     return this.http.post(`${this.base}/raw`, payload);
   }
+  seedDefaultConfig(): Observable<any> {
+    return this.http.post(`${this.base}/seed`, {});
+  }
 
   // Routes
   getRoutes(): Observable<RouteConfig[]> {

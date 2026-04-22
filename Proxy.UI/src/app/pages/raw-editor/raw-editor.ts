@@ -58,6 +58,16 @@ export class RawEditorComponent implements OnInit {
     }
   }
 
+  seedExample() {
+    this.proxyService.seedDefaultConfig().subscribe({
+      next: () => {
+        this.ngOnInit();
+        this.snackBar.open('Example configuration seeded!', 'Close', { duration: 4000 });
+      },
+      error: () => this.snackBar.open('Error seeding configuration.', 'Close', { duration: 4000 }),
+    });
+  }
+
   // ── Backup / Restore ───────────────────────────────────────────────────────
 
   exportBackup() {

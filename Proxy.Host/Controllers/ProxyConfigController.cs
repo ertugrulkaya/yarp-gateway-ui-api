@@ -367,4 +367,13 @@ public class ProxyConfigController : ControllerBase
         var errors   = _logService.CountErrors(since);
         return Ok(new { routes, clusters, requestsTotal = requests, errorsLast24h = errors });
     }
+
+    [HttpPost("seed")]
+    [Authorize]
+    public IActionResult SeedDefaultConfig()
+    {
+        _db.SeedDefaultConfig();
+        _provider.UpdateConfig();
+        return Ok(new { Message = "Default configuration seeded." });
+    }
 }

@@ -34,6 +34,8 @@ public class LiteDbService : IHostedService
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
+    public void SeedDefaultConfig() => EnsureDefaultConfigExists();
+
     // ── Auth ──────────────────────────────────────────────────────────────────
 
     private void EnsureDefaultAdminExists()
